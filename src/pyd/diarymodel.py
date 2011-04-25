@@ -4,21 +4,27 @@ Created on Apr 24, 2011
 @author: idcmp
 '''
 
-import datetime
 
 class Week:
     
-    def __init__(self):
+    def __init__(self, year):
         self.days = list()
         self.todo_carryover = list()
+        self.year = year
         
     def add_day(self, day):
         self.days.append(day)
+
+    def add_carryover(self, todo):
+        self.todo_carryover.append(todo)
 
     def dump(self, to):
         for todo in self.todo_carryover:
             todo.dump(to)
         
+        if self.todo_carryover.__len__() > 0:
+            to.write("\n")
+
         first_day = True
         for day in self.days:
             if first_day == False:
@@ -50,17 +56,15 @@ class Day(object):
 
             if self.in_at != None:
                 to.write("in " + self.in_at)
-                
                 if self.out_at != None:
                     to.write(" ")
-            
+
             if self.out_at != None:
                 to.write("out " + self.out_at)
-            
-            to.write(")")
+                to.write(")")
 
         to.write("\n")
-        
+
         for activity in self.activities:
                 activity.dump(to)
         
@@ -71,7 +75,7 @@ class DayActivity:
         
     def dump(self, to):
         pass
-        
+
 class DayBullet(DayActivity):
     
     def __init__(self, msg):
@@ -80,16 +84,40 @@ class DayBullet(DayActivity):
     def dump(self, to):
         to.write("- " + self.msg)
         to.write("\n")
-        pass
+
+class DayMultiBullet(DayActivity):
     
+    def __init__(self, msg):
+        self.msg = msg
+
+    def dump(self, to):
+        to.write("-- " + self.msg)
+        to.write("\n--\n")
+    
+class DayDone(DayActivity):
+    
+    def __init__(self, seq):
+        self.seq = int(seq)
+    
+    def dump(self, to):
+        to.write("- done: #%d" % self.seq)
+        to.write("\n")
+
 class DayTodo(DayActivity):
     
     highwatermark = 0
     
     def __init__(self, msg, seq=None):
-        self.seq = seq
+        
+        
+        if seq != None:
+            self.seq = int(seq)
+            DayTodo.highwatermark = max (DayTodo.highwatermark, self.seq)
+        else:
+            self.seq = None
+
         self.msg = msg
-        DayTodo.highwatermark = max (DayTodo.highwatermark, self.seq)
+        
             
     def dump(self, to):
         to.write("todo")

@@ -12,7 +12,7 @@ import editor
 import dfile
 
 if __name__ == '__main__':
-    current_diary = naming.currentName()
+    current_diary = naming.current_name()
     dfile.ensure_current_header_exists(current_diary)
     
     editor.launch(current_diary,55)

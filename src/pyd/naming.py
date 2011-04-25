@@ -6,8 +6,7 @@ Used to create names for diary files.
 import datetime
 import os;
 
-def currentName():
-
+def current_name():
     now =  datetime.date.today()    
     return diaryFile(now)
      

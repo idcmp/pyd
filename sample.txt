@@ -1,9 +1,0 @@
-** Sun 24-Apr ! in: 9:00 out: 1700
-* buckets: 
-- did this
-- did that
-todo: do this
-todo! home thing
-- done: #55
-
-** Mon 25-Apr ! in: 9:05
