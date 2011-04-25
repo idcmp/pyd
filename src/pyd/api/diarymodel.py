@@ -9,29 +9,17 @@ Each model class implements dump().
 class Week:
     
     def __init__(self, year):
-        self.days = list()
-        self.todo_carryover = list()
+        self.entries = list()
         self.year = year
+    
+    def days(self):
+        def is_day(entry): return isinstance(entry, Day)    
+        return filter(is_day, self.entries)
         
-    def add_day(self, day):
-        self.days.append(day)
-
-    def add_carryover(self, todo):
-        self.todo_carryover.append(todo)
-
     def dump(self, to):
-        for todo in self.todo_carryover:
-            todo.dump(to)
-        
-        if self.todo_carryover.__len__() > 0:
-            to.write("\n")
-
-        first_day = True
-        for day in self.days:
-            if first_day == False:
-                to.write("\n")
-            day.dump(to)
-            first_day = False
+        for entry in self.entries:
+            entry.dump(to)
+    
 
 class WeekEntry(object):
     """Abstract class from which all things in a week are derived.
@@ -41,7 +29,16 @@ class WeekEntry(object):
     """
     def dump(self, to):
         pass
-      
+    
+class FreeformWeekEntry(object):
+    """Generic place holder for "things we found in the file that aren't something else."""
+    
+    def __init__(self, text):
+        self.text = text
+        
+    def dump(self, to):
+        to.write(self.text + "\n")
+
 class Day(object):
     """A day contains DayActivities and some metadata.
     
@@ -50,6 +47,14 @@ class Day(object):
     
     def add_activity(self, act):
         self.activities.append(act)
+
+    def todos(self):
+        def is_todo(entry): return isinstance(entry, DayTodo)    
+        return filter(is_todo, self.activities)
+    
+    def dones(self):
+        def is_done(entry): return isinstance(entry, DayDone)    
+        return filter(is_done, self.activities)
         
     def __init__(self, my_day):
         self.my_day = my_day
@@ -64,7 +69,7 @@ class Day(object):
         self.out_at = out_at
 
     def dump(self, to):
-        to.write("** " + self.my_day.strftime("%a %d-%b"))
+        to.write("\n** " + self.my_day.strftime("%a %d-%b"))
         
         # It's perfectly valid to have no "out", in which case a closing paren is
         # not supposed to be there.
@@ -132,11 +137,14 @@ class DayDone(DayActivity):
     """Mark a TODO as done.  Format is "- done: #NN" where NN is the todo number.
     """
     
-    def __init__(self, seq):
+    def __init__(self, seq, msg=None):
         self.seq = int(seq)
+        self.msg = msg
     
     def dump(self, to):
         to.write("- done: #%d" % self.seq)
+        if self.msg:
+            to.write(self.msg)
         to.write("\n")
 
 class DayTodo(DayActivity):

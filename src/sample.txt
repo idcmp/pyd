@@ -21,6 +21,7 @@ todo: do this
 also multiline
 --
 - done: #55
+- done: #2 this has a message attached to it.
 
 ** Tue 26-Apr (in 9:00
 - did this

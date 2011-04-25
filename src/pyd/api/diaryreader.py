@@ -38,7 +38,9 @@ class DiaryReader:
             with codecs.open(filename, encoding='utf-8') as diary:
                 for line in diary:
                     cooked = string.rstrip(line)
-                    self.linereader.get(self.state)(cooked)
+                    if self.linereader.get(self.state)(cooked) == False:
+                        print "Lost text: " + cooked
+                        
         except IOError:
             pass
         
@@ -66,10 +68,6 @@ class DiaryReader:
             self.state = 'MULTILINEACTIVITY'
             return
         
-        if line.startswith("-"):
-            self.last_activity = diarymodel.DayBullet(string.strip(line[1:]))
-            self.current_day.add_activity(self.last_activity)
-            return
 
         m = re.match(r"todo\(#(.*)\): (.*)", line)
         if m:
@@ -82,27 +80,32 @@ class DiaryReader:
             self.current_day.add_activity(self.last_activity)
             return
 
-        m = re.match(r"- done: #(\d+)", line)
+        m = re.match(r"- done: #(\d+)(.*)", line)
         if m:
-            self.last_activity = diarymodel.DayDone(m.group(1))
+            self.last_activity = diarymodel.DayDone(m.group(1),m.group(2))
             self.current_day.add_activity(self.last_activity)
             return
     
-        print "!!!!!!!!!!! " + line
+        if line.startswith("-"):
+            self.last_activity = diarymodel.DayBullet(string.strip(line[1:]))
+            self.current_day.add_activity(self.last_activity)
+            return
+
+        return False
 
     def read_root(self, line):
         '''Private.'''
         m = re.match(r"todo\(#(.*)\): (.*)", line)
         if m:
             todo = diarymodel.DayTodo(m.group(2), m.group(1))
-            self.week.add_carryover(todo)
+            self.week.entries.append(todo)
             return
 
         m = re.match(r"\*\* ((Sun|Mon|Tue|Wed|Thu|Fri|Sat)) (\d+)-(\w+)(.*)", line)
         if m:
             dt = datetime.strptime(m.group(4), "%b")
             self.current_day = diarymodel.Day(date(self.week.year, dt.month, int(m.group(3))))
-            self.week.add_day(self.current_day)
+            self.week.entries.append(self.current_day)
             if m.group(5):
                 inout = m.group(5)
                 inout = string.strip(inout, "(): ")
@@ -114,4 +117,15 @@ class DiaryReader:
                         self.current_day.in_at = inout.popleft()
                     if re.match("o", label):
                         self.current_day.out_at = inout.popleft()
-            self.state = 'DAY'     
+            self.state = 'DAY'   
+            return
+          
+        if len(line) > 0:
+            self.week.entries.append(diarymodel.FreeformWeekEntry(line))
+            return
+        else:
+            # is swallowing blank lines considered bad?
+            # effectively this pushes floating entries into the previous day
+            return
+        
+        return False
