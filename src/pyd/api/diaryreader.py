@@ -69,14 +69,14 @@ class DiaryReader:
             return
         
 
-        m = re.match(r"todo\(#(.*)\): (.*)", line)
+        m = re.match(r"- todo\(#(.*)\): (.*)", line)
         if m:
             self.last_activity = diarymodel.DayTodo(m.group(2), m.group(1))
             self.current_day.add_activity(self.last_activity)
             return
                 
-        if line.startswith("todo:"):
-            self.last_activity = diarymodel.DayTodo(string.strip(line[5:]))
+        if line.startswith("- todo:"):
+            self.last_activity = diarymodel.DayTodo(string.strip(line[7:]))
             self.current_day.add_activity(self.last_activity)
             return
 
@@ -86,6 +86,10 @@ class DiaryReader:
             self.current_day.add_activity(self.last_activity)
             return
     
+        if line == "-":
+            # remove left over prompts
+            return
+        
         if line.startswith("-"):
             self.last_activity = diarymodel.DayBullet(string.strip(line[1:]))
             self.current_day.add_activity(self.last_activity)

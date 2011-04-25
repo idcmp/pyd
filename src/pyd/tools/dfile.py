@@ -1,12 +1,29 @@
 '''
-
+    SDK ontop of the API
 '''
 
 from datetime import date
+
 from api.diaryreader import DiaryReader
 from api.diarywriter import DiaryWriter
-
 from api.diarymodel import Day
+
+def find_todos(filename):
+    dr = DiaryReader()
+    week = dr.read_file(filename)
+    
+    todos = list()
+    for day in week.days():
+        for todo in day.todos():
+            todos.append(todo)
+            
+    for day in week.days():
+        for done in day.dones():
+            for todo in todos:
+                if todo.seq == done.seq:
+                    todos.remove(todo)
+                    break
+    return todos
 
 def ensure_current_header_exists(filename):
     """Ensures the day header for the current day exists in filename.

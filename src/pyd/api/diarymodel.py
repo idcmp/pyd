@@ -173,7 +173,7 @@ class DayTodo(DayActivity):
         
             
     def dump(self, to):
-        to.write("todo")
+        to.write("- todo")
 
         if self.seq == None:
             DayTodo.highwatermark += 1
