@@ -9,10 +9,11 @@ import string
 
 import re #yeah yeah
 
-import pyd.diarymodel as diarymodel
+import diarymodel
 
 class DiaryReader:
-
+    '''Read a diary file into a diarymodel.
+    '''
     def __init__(self):
         self.state = 'ROOT'
         self.linereader = { 'ROOT': self.read_root,
@@ -20,6 +21,8 @@ class DiaryReader:
                            'MULTILINEACTIVITY': self.read_multiline }
     
     def read_file(self, filename):
+        
+        # A hack to figure out which year to use.
         if string.find(filename, '2010') > -1:
             year = 2010
         elif string.find(filename, '2011') > -1:
@@ -31,14 +34,18 @@ class DiaryReader:
   
         self.week = diarymodel.Week(year)
         
-        with codecs.open(filename, encoding='utf-8') as diary:
-            for line in diary:
-                cooked = string.rstrip(line)
-                self.linereader.get(self.state)(cooked)
+        try:
+            with codecs.open(filename, encoding='utf-8') as diary:
+                for line in diary:
+                    cooked = string.rstrip(line)
+                    self.linereader.get(self.state)(cooked)
+        except IOError:
+            pass
         
         return self.week
     
     def read_multiline(self, line):
+        '''Private.'''
         if line == "--":
             self.last_activity.msg = string.rstrip(self.last_activity.msg, "\r\n \t")
             self.state = 'DAY'
@@ -48,6 +55,7 @@ class DiaryReader:
 
 
     def read_day(self, line):
+        '''Private.'''
         if len(line) == 0:
             self.state = 'ROOT'
             return
@@ -62,7 +70,13 @@ class DiaryReader:
             self.last_activity = diarymodel.DayBullet(string.strip(line[1:]))
             self.current_day.add_activity(self.last_activity)
             return
-        
+
+        m = re.match(r"todo\(#(.*)\): (.*)", line)
+        if m:
+            self.last_activity = diarymodel.DayTodo(m.group(2), m.group(1))
+            self.current_day.add_activity(self.last_activity)
+            return
+                
         if line.startswith("todo:"):
             self.last_activity = diarymodel.DayTodo(string.strip(line[5:]))
             self.current_day.add_activity(self.last_activity)
@@ -75,8 +89,9 @@ class DiaryReader:
             return
     
         print "!!!!!!!!!!! " + line
-        
+
     def read_root(self, line):
+        '''Private.'''
         m = re.match(r"todo\(#(.*)\): (.*)", line)
         if m:
             todo = diarymodel.DayTodo(m.group(2), m.group(1))

@@ -1,7 +1,8 @@
 '''
-Created on Apr 24, 2011
+A model to describe a week in the life of pyd.
 
-@author: idcmp
+Each model class implements dump().
+
 '''
 
 
@@ -31,8 +32,21 @@ class Week:
                 to.write("\n")
             day.dump(to)
             first_day = False
-            
+
+class WeekEntry(object):
+    """Abstract class from which all things in a week are derived.
+    
+        Usually a week just has Day objects in it, however directly referencing Day runs into a challenge
+        where there may be other kinds of entries (such as freeform text) that we don't want to lose.
+    """
+    def dump(self, to):
+        pass
+      
 class Day(object):
+    """A day contains DayActivities and some metadata.
+    
+    A day knows which year its in from the Week.
+    """
     
     def add_activity(self, act):
         self.activities.append(act)
@@ -51,6 +65,9 @@ class Day(object):
 
     def dump(self, to):
         to.write("** " + self.my_day.strftime("%a %d-%b"))
+        
+        # It's perfectly valid to have no "out", in which case a closing paren is
+        # not supposed to be there.
         if self.in_at != None or self.out_at != None:
             to.write(" (")
 
@@ -67,9 +84,20 @@ class Day(object):
 
         for activity in self.activities:
                 activity.dump(to)
-        
-class DayActivity:
     
+    def __eq__(self, other):
+        """Two Day objects are identical if they have the same day/month.
+        
+        It's not safe to compare Day objects from different years.
+        """
+        return other.my_day.month == self.my_day.month and other.my_day.day == self.my_day.day
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+    
+class DayActivity:
+    """Abstract class for activities that occur in a day."""    
+
     def __init__(self):
         self.msg = None
         
@@ -77,6 +105,8 @@ class DayActivity:
         pass
 
 class DayBullet(DayActivity):
+    """A thing you did today.  Starts with "- " and contains a single line of text.
+    """
     
     def __init__(self, msg):
         self.msg = msg
@@ -86,6 +116,10 @@ class DayBullet(DayActivity):
         to.write("\n")
 
 class DayMultiBullet(DayActivity):
+    """A thing you did today; supporting multiple lines.  
+    
+    Starts with "--" (followed optionally by text) and ends with "--" on a line by itself.
+    """
     
     def __init__(self, msg):
         self.msg = msg
@@ -95,6 +129,8 @@ class DayMultiBullet(DayActivity):
         to.write("\n--\n")
     
 class DayDone(DayActivity):
+    """Mark a TODO as done.  Format is "- done: #NN" where NN is the todo number.
+    """
     
     def __init__(self, seq):
         self.seq = int(seq)
@@ -104,6 +140,15 @@ class DayDone(DayActivity):
         to.write("\n")
 
 class DayTodo(DayActivity):
+    """Todo list management.
+    
+    This class breathes some life into pyd.  Entries starting with "todo:" can be added and
+    pyd will automatically rewrite them to include a point-in-time-unique number.  Note that
+    the number does not monotonically increase, but simply finds the highest todo # in the current
+    week and adds one.
+    
+    Todo entries not completed at the end of the week are carried over to the next week.
+    """
     
     highwatermark = 0
     

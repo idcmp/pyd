@@ -7,7 +7,6 @@ Add an entry to the current diary file.
 '''
 
 import naming
-import os
 import editor
 import dfile
 
