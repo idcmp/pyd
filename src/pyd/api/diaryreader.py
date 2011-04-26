@@ -33,16 +33,19 @@ class DiaryReader:
             year = 2011
   
         self.week = diarymodel.Week(year)
+        self.week.persistent = True
         
         try:
             with codecs.open(filename, encoding='utf-8') as diary:
                 for line in diary:
                     cooked = string.rstrip(line)
                     if self.linereader.get(self.state)(cooked) == False:
-                        print "Lost text: " + cooked
+                        ff = diarymodel.FreeformWeekEntry(cooked)
+                        self.week.entries.append(ff)
                         
         except IOError:
-            pass
+            self.week.persistent = False
+        
         
         return self.week
     
@@ -105,6 +108,10 @@ class DiaryReader:
             self.week.entries.append(todo)
             return
 
+        if line == "++carriedforward":
+            cf = diarymodel.CarryForwardIndicator()
+            self.week.entries.append(cf)
+            return
 
         m = re.match(r"\*\* ((Sun|Mon|Tue|Wed|Thu|Fri|Sat)) (\d+)-(\w+)(.*)", line)
         if m:

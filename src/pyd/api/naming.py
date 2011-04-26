@@ -10,7 +10,7 @@ def current_name():
     now = date.today()    
     return generate_filename(now)
 
-def relatve_name(weeks_ago):
+def relative_name(weeks_ago):
     now = datetime.now()
     then = now - timedelta(weeks=weeks_ago)
     return generate_filename(then)

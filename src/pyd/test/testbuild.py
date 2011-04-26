@@ -9,8 +9,8 @@ import unittest2 as unittest
 import datetime
 import sys
 
-import pyd.diarymodel as diary
-import pyd.diaryreader as reader
+import pyd.api.diarymodel as diary
+import pyd.api.diaryreader as reader
 
 class Test(unittest.TestCase):
 

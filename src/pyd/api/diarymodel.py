@@ -17,29 +17,21 @@ def dayactivity(cls):
     return cls
 
 class Week:
-    
-    entries = []
-    
+        
     def __init__(self, year):
-        self.entries = list()
+        self.entries = []
         self.year = year
+        self.persistent = False
+    
+    def has_carryforward(self):
+        return len(filter(lambda entry: isinstance(entry,CarryForwardIndicator), self.entries)) != 0
     
     def days(self):
-        def is_day(entry): return isinstance(entry, Day)    
-        return filter(is_day, self.entries)
+        return filter(lambda entry: isinstance(entry, Day), self.entries)
         
     def dump(self, to):
         for entry in self.entries:
             entry.dump(to)
-        self.whoo()
-        
-    def whoo(self):
-        for e in week_entries:
-            print "week entry: "
-            print e
-        for d in day_activities:
-            print "day act: "
-            print d
             
 class WeekEntry(object):
     """Abstract class from which all things in a week are derived.
@@ -51,7 +43,7 @@ class WeekEntry(object):
         pass
     
 @weekentry
-class FreeformWeekEntry(object):
+class FreeformWeekEntry(WeekEntry):
     """Generic place holder for "things we found in the file that aren't something else."""
     
     def __init__(self, text):
@@ -61,7 +53,13 @@ class FreeformWeekEntry(object):
         to.write(self.text + "\n")
 
 @weekentry
-class Day(object):
+class CarryForwardIndicator(WeekEntry):
+
+    def dump(self, to):
+        to.write("++carriedforward")
+        
+@weekentry
+class Day(WeekEntry):
     """A day contains DayActivities and some metadata.
     
     A day knows which year its in from the Week.
@@ -73,16 +71,14 @@ class Day(object):
         self.activities.append(act)
 
     def todos(self):
-        def is_todo(entry): return isinstance(entry, DayTodo)    
-        return filter(is_todo, self.activities)
+        return filter(lambda entry: isinstance(entry, DayTodo), self.activities)
     
     def dones(self):
-        def is_done(entry): return isinstance(entry, DayDone)    
-        return filter(is_done, self.activities)
+        return filter(lambda entry: isinstance(entry, DayDone), self.activities)
 
     def __init__(self, my_day):
         self.my_day = my_day
-        self.activities = list()
+        self.activities = []
         self.in_at = None
         self.out_at = None
         

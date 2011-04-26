@@ -6,24 +6,14 @@ from datetime import date
 
 from api.diaryreader import DiaryReader
 from api.diarywriter import DiaryWriter
-from api.diarymodel import Day
 
-def find_todos(filename):
+from api.carryforward import find_todos_in_week
+    
+def find_todos_in_file(filename):
     dr = DiaryReader()
     week = dr.read_file(filename)
-    
-    todos = list()
-    for day in week.days():
-        for todo in day.todos():
-            todos.append(todo)
-            
-    for day in week.days():
-        for done in day.dones():
-            for todo in todos:
-                if todo.seq == done.seq:
-                    todos.remove(todo)
-                    break
-    return todos
+    return find_todos_in_week(week)
+
 
 def ensure_current_header_exists(filename):
     """Ensures the day header for the current day exists in filename.
@@ -34,10 +24,8 @@ def ensure_current_header_exists(filename):
     dr = DiaryReader()
     week = dr.read_file(filename)
     
-    def is_today(day): return day.my_day == date.today()
-    
     # if we have more than one for whatever reason, that's fine.
-    if len(filter(is_today, week.days())) == 0:
+    if len(filter(lambda day: day.my_day == date.today(), week.days())) == 0:
         day = Day(date.today())
         week.entries.append(day)
         
