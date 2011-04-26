@@ -105,6 +105,7 @@ class DiaryReader:
             self.week.entries.append(todo)
             return
 
+
         m = re.match(r"\*\* ((Sun|Mon|Tue|Wed|Thu|Fri|Sat)) (\d+)-(\w+)(.*)", line)
         if m:
             dt = datetime.strptime(m.group(4), "%b")

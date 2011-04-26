@@ -8,7 +8,7 @@ Add an entry to the current diary file.
 
 from api.naming import current_name
 from api.editor import launch
-from tools.dfile import ensure_current_header_exists, read_and_rewrite
+from tools.toolbox import ensure_current_header_exists, read_and_rewrite
 
 from codecs import open
 

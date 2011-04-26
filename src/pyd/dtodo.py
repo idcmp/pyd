@@ -7,7 +7,7 @@ Created on Apr 25, 2011
 import sys
 
 from api.naming import current_name
-from tools.dfile import find_todos
+from tools.toolbox import find_todos
 
 if __name__ == '__main__':
     current_diary = current_name()

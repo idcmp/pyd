@@ -5,8 +5,20 @@ Each model class implements dump().
 
 '''
 
+week_entries = []
+day_activities = []
+
+def weekentry(cls):
+    week_entries.append(cls)
+    return cls
+
+def dayactivity(cls):
+    day_activities.append(cls)
+    return cls
 
 class Week:
+    
+    entries = []
     
     def __init__(self, year):
         self.entries = list()
@@ -19,8 +31,16 @@ class Week:
     def dump(self, to):
         for entry in self.entries:
             entry.dump(to)
-    
-
+        self.whoo()
+        
+    def whoo(self):
+        for e in week_entries:
+            print "week entry: "
+            print e
+        for d in day_activities:
+            print "day act: "
+            print d
+            
 class WeekEntry(object):
     """Abstract class from which all things in a week are derived.
     
@@ -30,6 +50,7 @@ class WeekEntry(object):
     def dump(self, to):
         pass
     
+@weekentry
 class FreeformWeekEntry(object):
     """Generic place holder for "things we found in the file that aren't something else."""
     
@@ -39,11 +60,14 @@ class FreeformWeekEntry(object):
     def dump(self, to):
         to.write(self.text + "\n")
 
+@weekentry
 class Day(object):
     """A day contains DayActivities and some metadata.
     
     A day knows which year its in from the Week.
     """
+    
+    activity_types = []
     
     def add_activity(self, act):
         self.activities.append(act)
@@ -55,7 +79,7 @@ class Day(object):
     def dones(self):
         def is_done(entry): return isinstance(entry, DayDone)    
         return filter(is_done, self.activities)
-        
+
     def __init__(self, my_day):
         self.my_day = my_day
         self.activities = list()
@@ -109,10 +133,11 @@ class DayActivity:
     def dump(self, to):
         pass
 
+@dayactivity
 class DayBullet(DayActivity):
     """A thing you did today.  Starts with "- " and contains a single line of text.
     """
-    
+            
     def __init__(self, msg):
         self.msg = msg
 
@@ -120,6 +145,7 @@ class DayBullet(DayActivity):
         to.write("- " + self.msg)
         to.write("\n")
 
+@dayactivity
 class DayMultiBullet(DayActivity):
     """A thing you did today; supporting multiple lines.  
     
@@ -133,6 +159,7 @@ class DayMultiBullet(DayActivity):
         to.write("-- " + self.msg)
         to.write("\n--\n")
     
+@dayactivity
 class DayDone(DayActivity):
     """Mark a TODO as done.  Format is "- done: #NN" where NN is the todo number.
     """
@@ -147,6 +174,7 @@ class DayDone(DayActivity):
             to.write(self.msg)
         to.write("\n")
 
+@dayactivity
 class DayTodo(DayActivity):
     """Todo list management.
     
@@ -161,8 +189,6 @@ class DayTodo(DayActivity):
     highwatermark = 0
     
     def __init__(self, msg, seq=None):
-        
-        
         if seq != None:
             self.seq = int(seq)
             DayTodo.highwatermark = max (DayTodo.highwatermark, self.seq)
