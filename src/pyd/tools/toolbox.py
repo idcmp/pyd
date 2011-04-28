@@ -4,10 +4,10 @@
 
 from datetime import date
 
-import pyd.api.diaryreader as reader
-import pyd.api.diarywriter as writer
+import api.diaryreader as reader
+import api.diarywriter as writer
 
-import pyd.api.diarymodel as model
+import api.diarymodel as model
     
 def find_todos_in_file(filename):
     dr = reader.DiaryReader()

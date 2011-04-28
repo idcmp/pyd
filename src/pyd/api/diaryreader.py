@@ -9,7 +9,7 @@ import string
 
 import re #yeah yeah
 
-import pyd.api.diarymodel as diarymodel
+import api.diarymodel as diarymodel
 
 class DiaryReader:
     '''Read a diary file into a diarymodel.
