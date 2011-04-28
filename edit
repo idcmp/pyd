@@ -7,10 +7,10 @@ Add an entry to the current diary file.
 @author: idcmp
 '''
 
-import api.naming as naming
-import api.editor as editor
-import api.carryforward as cf
-import tools.toolbox as toolbox
+from pyd.api import naming
+from pyd.api import editor
+from pyd.api import carryforward as cf
+from pyd.tools import toolbox
 
 from codecs import open
 

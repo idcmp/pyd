@@ -7,8 +7,8 @@ Created on Apr 25, 2011
 
 import sys
 
-import pyd.api.naming as naming
-import pyd.tools.toolbox as toolbox
+from pyd.api import naming
+from pyd.tools import toolbox
 
 if __name__ == '__main__':
     current_diary = naming.current_name()
