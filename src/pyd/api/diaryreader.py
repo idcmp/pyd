@@ -2,14 +2,14 @@
 This module is in charge of deserializing a diary file.
 '''
 
-from datetime import datetime, date, time
+from datetime import datetime, date
 from collections import deque
 import codecs
 import string
 
 import re #yeah yeah
 
-import diarymodel
+import pyd.api.diarymodel as diarymodel
 
 class DiaryReader:
     '''Read a diary file into a diarymodel.

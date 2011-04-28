@@ -6,17 +6,12 @@ mechanism is responsible for pushing todo entries forward and the timesheet mech
 @author: idcmp
 '''
 
-import sys
+from pyd.api.diaryreader import DiaryReader
+from pyd.api.diarywriter import DiaryWriter
 
-from datetime import date
+import pyd.api.diarymodel as model
 
-from api.diaryreader import DiaryReader
-from api.diarywriter import DiaryWriter
-import api.diarymodel
-
-import api.naming as naming
-
-model = api.diarymodel
+import pyd.api.naming as naming
 
 def perform_carryforward():
     '''Perform as many carryforwards as needed.
@@ -54,8 +49,8 @@ def _carryforward(fromweek, toweek):
     co = model.CarryForwardIndicator()
     fromweek.entries.append(co)
     
-    for e in api.diarymodel.carryforward_participants:
-        e.carryforward(fromweek,toweek)  
+    for e in model.carryforward_participants:
+        e.carryforward(fromweek, toweek)  
     
     return
 

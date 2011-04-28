@@ -4,18 +4,17 @@
 
 from datetime import date
 
-from api.diaryreader import DiaryReader
-from api.diarywriter import DiaryWriter
+from pyd.api.diaryreader import DiaryReader
+from pyd.api.diarywriter import DiaryWriter
 
-from api.diarymodel import Day
+from pyd.api.diarymodel import Day
 
-from api.diarymodel  import find_todos_in_week
+from pyd.api.diarymodel  import find_todos_in_week
     
 def find_todos_in_file(filename):
     dr = DiaryReader()
     week = dr.read_file(filename)
     return find_todos_in_week(week)
-
 
 def ensure_current_header_exists(filename):
     """Ensures the day header for the current day exists in filename.

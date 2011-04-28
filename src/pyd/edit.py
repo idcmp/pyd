@@ -6,10 +6,10 @@ Add an entry to the current diary file.
 @author: idcmp
 '''
 
-from api.naming import current_name
-from api.editor import launch
-from api.carryforward import perform_carryforward
-from tools.toolbox import ensure_current_header_exists, read_and_rewrite
+from pyd.api.naming import current_name
+from pyd.api.editor import launch
+from pyd.api.carryforward import perform_carryforward
+from pyd.tools.toolbox import ensure_current_header_exists, read_and_rewrite
 
 from codecs import open
 
