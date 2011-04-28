@@ -6,12 +6,10 @@ mechanism is responsible for pushing todo entries forward and the timesheet mech
 @author: idcmp
 '''
 
-import diaryreader as reader
-import diarywriter as writer
-
-import diarymodel as model
-
-import naming as naming
+from pyd.api import diaryreader as reader
+from pyd.api import diarywriter as writer
+from pyd.api import diarymodel as model
+from pyd.api import naming as naming
 
 def perform_carryforward():
     '''Perform as many carryforwards as needed.
