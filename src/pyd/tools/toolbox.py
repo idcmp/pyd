@@ -7,6 +7,8 @@ from datetime import date
 from api.diaryreader import DiaryReader
 from api.diarywriter import DiaryWriter
 
+from api.diarymodel import Day
+
 from api.carryforward import find_todos_in_week
     
 def find_todos_in_file(filename):

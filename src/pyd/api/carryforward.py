@@ -34,23 +34,20 @@ def perform_carryforward():
             break
         offset += 1
     
-    if offset == 1:
-        # nothing to carry forward
-        return False
+    while offset > 1:
+        offset -= 1
+        fromname = naming.relative_name(offset)
+        toname = naming.relative_name(offset - 1)
 
-    offset -= 1
-    fromname = naming.relative_name(offset)
-    toname = naming.relative_name(offset - 1)
-
-    print "carry from %s to %s" % (fromname,toname)
+        fromweek = DiaryReader().read_file(fromname)
+        toweek = DiaryReader().read_file(toname)
         
-    fromweek = DiaryReader().read_file(fromname)
-    toweek = DiaryReader().read_file(toname)
+        _carryforward(fromweek, toweek)
     
-    _carryforward(fromweek, toweek)
-
-    DiaryWriter().write_file(fromname, fromweek)
-    DiaryWriter().write_file(toname, toweek)
+        DiaryWriter().write_file(fromname, fromweek)
+        DiaryWriter().write_file(toname, toweek)
+        
+    return
 
 def _carryforward(fromweek, toweek):
     
@@ -60,17 +57,19 @@ def _carryforward(fromweek, toweek):
     fromweek.dump(sys.stdout)
     carryover = find_todos_in_week(fromweek)
     for c in carryover:
-        print "xxx"
         c.dump(sys.stdout)
         
     for c in carryover:
-        toweek.entries.prepend(c)
+        toweek.entries.insert(0, c)
     
-    ff = model.FreeformWeekEntry("## touched!")
-    toweek.entries.append(ff)
     return
 
 def find_todos_in_week(week):
+    '''Return all DayTodo instances in a Week.
+    
+    Note this method will return both carryover and daily todo entries in the list, in the order they're found in the Week.
+    '''
+    
     todos = []
     
     for entry in week.entries:
@@ -84,8 +83,6 @@ def find_todos_in_week(week):
         for done in day.dones():
             for todo in todos:
                 if todo.seq == done.seq:
-                    print "remove"
-                    print todo.seq
                     todos.remove(todo)
                     break
     return todos

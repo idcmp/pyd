@@ -15,9 +15,7 @@ from codecs import open
 
 if __name__ == '__main__':
     current_diary = current_name()
-    print "co"
     perform_carryforward()
-    print "co end"
     ensure_current_header_exists(current_diary)
     
     with open(current_diary, mode='a', encoding='utf-8') as f:

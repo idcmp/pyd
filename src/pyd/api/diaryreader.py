@@ -102,7 +102,7 @@ class DiaryReader:
 
     def read_root(self, line):
         '''Private.'''
-        m = re.match(r"todo\(#(.*)\): (.*)", line)
+        m = re.match(r"- todo\(#(.*)\): (.*)", line)
         if m:
             todo = diarymodel.DayTodo(m.group(2), m.group(1))
             self.week.entries.append(todo)
