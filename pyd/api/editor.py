@@ -11,7 +11,8 @@ DEFAULT_EDITOR = "emacs"
 
 AT_END = {
     # Emacs variants
-    'emacs': ["+9999"],
+    'emacs': ["-nw","+9999"],
+    'nano': [ "+9999"],
     'xemacs': ["+9999"],
     # vi(m) variants
     'vi': ["+9999"],
