@@ -6,12 +6,12 @@ mechanism is responsible for pushing todo entries forward and the timesheet mech
 @author: idcmp
 '''
 
-from pyd.api.diaryreader import DiaryReader
-from pyd.api.diarywriter import DiaryWriter
+import diaryreader as reader
+import diarywriter as writer
 
-import pyd.api.diarymodel as model
+import diarymodel as model
 
-import pyd.api.naming as naming
+import naming as naming
 
 def perform_carryforward():
     '''Perform as many carryforwards as needed.
@@ -24,7 +24,7 @@ def perform_carryforward():
     offset = 1
     while True:
         weekname = naming.relative_name(offset)
-        week = DiaryReader().read_file(weekname)
+        week = reader.DiaryReader().read_file(weekname)
         if week.has_carryforward() or week.persistent == False:
             break
         offset += 1
@@ -34,13 +34,13 @@ def perform_carryforward():
         fromname = naming.relative_name(offset)
         toname = naming.relative_name(offset - 1)
 
-        fromweek = DiaryReader().read_file(fromname)
-        toweek = DiaryReader().read_file(toname)
+        fromweek = reader.DiaryReader().read_file(fromname)
+        toweek = reader.DiaryReader().read_file(toname)
         
         _carryforward(fromweek, toweek)
     
-        DiaryWriter().write_file(fromname, fromweek)
-        DiaryWriter().write_file(toname, toweek)
+        writer.DiaryWriter().write_file(fromname, fromweek)
+        writer.DiaryWriter().write_file(toname, toweek)
         
     return
 

@@ -6,13 +6,13 @@ Created on Apr 25, 2011
 
 import sys
 
-from pyd.api.naming import current_name
-from pyd.tools.toolbox import find_todos_in_file
+import pyd.api.naming as naming
+import pyd.tools.toolbox as toolbox
 
 if __name__ == '__main__':
-    current_diary = current_name()
+    current_diary = naming.current_name()
 
-    todos = find_todos_in_file(current_diary)
+    todos = toolbox.find_todos_in_file(current_diary)
 
     for todo in todos:
         todo.dump(sys.stdout)    

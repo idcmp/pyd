@@ -14,6 +14,22 @@ import datetime
 
 class Test(unittest.TestCase):
 
+    def test_loopback_multi_day(self):
+        ''' Loopback test of appending multiple days.'''
+        week = model.Week(2011)
+        day1 = model.Day(datetime.date(year=2011, month=1, day=1))
+        day2 = model.Day(datetime.date(year=2011, month=1, day=2))
+        week.entries.append(day1)
+        week.entries.append(day2)
+
+        writer.DiaryWriter().write_file("sample2.txt", week)
+        week_in = reader.DiaryReader().read_file("sample2.txt")
+
+        self.assertEqual(len(week.entries), len(week_in.entries))
+        for i, j in zip(week.entries, week_in.entries):
+            self.assertEqual(i, j)
+
+
     def test_carryforward_detected(self):
         w = model.Week(2011)
         co = model.CarryForwardIndicator()

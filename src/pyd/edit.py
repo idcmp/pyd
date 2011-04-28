@@ -6,20 +6,20 @@ Add an entry to the current diary file.
 @author: idcmp
 '''
 
-from pyd.api.naming import current_name
-from pyd.api.editor import launch
-from pyd.api.carryforward import perform_carryforward
-from pyd.tools.toolbox import ensure_current_header_exists, read_and_rewrite
+import api.naming as naming
+import api.editor as editor
+import api.carryforward as cf
+import tools.toolbox as toolbox
 
 from codecs import open
 
 if __name__ == '__main__':
-    current_diary = current_name()
-    perform_carryforward()
-    ensure_current_header_exists(current_diary)
+    current_diary = naming.current_name()
+    cf.perform_carryforward()
+    toolbox.ensure_current_header_exists(current_diary)
     
     with open(current_diary, mode='a', encoding='utf-8') as f:
         f.write("- ")
     
-    launch(current_diary)
-    read_and_rewrite(current_diary)
+    editor.launch(current_diary)
+    toolbox.read_and_rewrite(current_diary)
