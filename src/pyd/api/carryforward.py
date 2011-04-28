@@ -50,39 +50,12 @@ def perform_carryforward():
     return
 
 def _carryforward(fromweek, toweek):
-    
+
     co = model.CarryForwardIndicator()
     fromweek.entries.append(co)
     
-    fromweek.dump(sys.stdout)
-    carryover = find_todos_in_week(fromweek)
-    for c in carryover:
-        c.dump(sys.stdout)
-        
-    for c in carryover:
-        toweek.entries.insert(0, c)
+    for e in api.diarymodel.carryforward_participants:
+        e.carryforward(fromweek,toweek)  
     
     return
 
-def find_todos_in_week(week):
-    '''Return all DayTodo instances in a Week.
-    
-    Note this method will return both carryover and daily todo entries in the list, in the order they're found in the Week.
-    '''
-    
-    todos = []
-    
-    for entry in week.entries:
-        if (isinstance(entry, model.DayTodo)): todos.append(entry)
-        
-    for day in week.days():
-        for todo in day.todos():
-            todos.append(todo)
-            
-    for day in week.days():
-        for done in day.dones():
-            for todo in todos:
-                if todo.seq == done.seq:
-                    todos.remove(todo)
-                    break
-    return todos

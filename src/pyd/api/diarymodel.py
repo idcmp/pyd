@@ -7,6 +7,11 @@ Each model class implements dump().
 
 week_entries = []
 day_activities = []
+carryforward_participants = []
+
+def carryforward(cls):
+    carryforward_participants.append(cls)
+    return cls
 
 def weekentry(cls):
     week_entries.append(cls)
@@ -24,7 +29,7 @@ class Week:
         self.persistent = False
     
     def has_carryforward(self):
-        return len(filter(lambda entry: isinstance(entry,CarryForwardIndicator), self.entries)) != 0
+        return len(filter(lambda entry: isinstance(entry, CarryForwardIndicator), self.entries)) != 0
     
     def days(self):
         return filter(lambda entry: isinstance(entry, Day), self.entries)
@@ -170,6 +175,7 @@ class DayDone(DayActivity):
             to.write(self.msg)
         to.write("\n")
 
+@carryforward
 @dayactivity
 class DayTodo(DayActivity):
     """Todo list management.
@@ -193,7 +199,13 @@ class DayTodo(DayActivity):
 
         self.msg = msg
         
-            
+    @staticmethod
+    def carryforward(fromweek, toweek):
+        carryover = find_todos_in_week(fromweek)
+
+        for c in carryover:
+            toweek.entries.insert(0, c)
+ 
     def dump(self, to):
         to.write("- todo")
 
@@ -204,3 +216,27 @@ class DayTodo(DayActivity):
         to.write("(#%d)" % self.seq)
         to.write(": " + self.msg)
         to.write("\n")
+
+
+def find_todos_in_week(week):
+    '''Return all DayTodo instances in a Week.
+    
+    Note this method will return both carryover and daily todo entries in the list, in the order they're found in the Week.
+    '''
+    
+    todos = []
+    
+    for entry in week.entries:
+        if (isinstance(entry, DayTodo)): todos.append(entry)
+        
+    for day in week.days():
+        for todo in day.todos():
+            todos.append(todo)
+            
+    for day in week.days():
+        for done in day.dones():
+            for todo in todos:
+                if todo.seq == done.seq:
+                    todos.remove(todo)
+                    break
+    return todos
