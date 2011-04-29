@@ -134,6 +134,9 @@ class DayActivity:
     def dump(self, to):
         pass
 
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
 @dayactivity
 class DayBullet(DayActivity):
     """A thing you did today.  Starts with "- " and contains a single line of text.
@@ -145,6 +148,9 @@ class DayBullet(DayActivity):
     def dump(self, to):
         to.write("- " + self.msg)
         to.write("\n")
+
+    def __eq__(self, other):
+        return isinstance(other, DayBullet) and other.msg == self.msg
 
 @dayactivity
 class DayMultiBullet(DayActivity):
@@ -160,6 +166,9 @@ class DayMultiBullet(DayActivity):
         to.write("-- " + self.msg)
         to.write("\n--\n")
     
+    def __eq__(self, other):
+        return isinstance(other, DayMultiBullet) and other.msg == self.msg
+    
 @dayactivity
 class DayDone(DayActivity):
     """Mark a TODO as done.  Format is "- done: #NN" where NN is the todo number.
@@ -174,6 +183,9 @@ class DayDone(DayActivity):
         if self.msg:
             to.write(self.msg)
         to.write("\n")
+        
+    def __eq__(self, other):
+        return isinstance(other, DayDone) and self.seq == other.seq and other.msg == self.msg
 
 @carryforward
 @dayactivity
@@ -199,6 +211,9 @@ class DayTodo(DayActivity):
 
         self.msg = msg
         
+    def __eq__(self, other):
+        return isinstance(other, DayTodo) and self.seq == other.seq and other.msg == self.msg
+    
     @staticmethod
     def carryforward(fromweek, toweek):
         carryover = find_todos_in_week(fromweek)

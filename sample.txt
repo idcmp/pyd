@@ -5,7 +5,7 @@ todo(#3): this is better than (#2) was.
 ** Sun 24-Apr (in 9:00 out 17:00)
 - did this
 - did that
-todo: do this
+- todo: do this
 - done: #55
 
 ** Mon 25-Apr (in: 9:00 out: 17:00)
@@ -16,7 +16,7 @@ so this is multiline
 and it can do cool
 stuff
 --
-todo: do this
+- todo: do this
 --
 also multiline
 --

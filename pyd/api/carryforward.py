@@ -1,9 +1,11 @@
 '''Part of the API which deals with copying forward data from older weeks into newer weeks.
 
-Generally this is triggered when there's a "new" week.  This
-mechanism is responsible for pushing todo entries forward and the timesheet mechanism.
+Generally this is triggered when there's a "new" week. 
 
-@author: idcmp
+This mechanism is responsible for dispatching to DayTodo to push todo
+entries forward and the timesheet mechanism.  It calls out to the static method
+carryforward on classes decorated with @carryforward.
+
 '''
 
 from pyd.api import diaryreader as reader
@@ -43,12 +45,13 @@ def perform_carryforward():
     return
 
 def _carryforward(fromweek, toweek):
+    """Add the CarryForwardIndicator to the source week and call carryforward on all
+    classes annotated with @carryforward."""
 
-    co = model.CarryForwardIndicator()
-    fromweek.entries.append(co)
+    fromweek.entries.append(model.CarryForwardIndicator())
     
-    for e in model.carryforward_participants:
-        e.carryforward(fromweek, toweek)  
+    for entry in model.carryforward_participants:
+        entry.carryforward(fromweek, toweek)  
     
     return
 

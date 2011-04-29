@@ -30,7 +30,18 @@ class Test(unittest.TestCase):
             self.assertEqual(i, j)
 
 
+    def test_week_days_finds_days(self):
+        """week.days finds days correctly."""
+        week = model.Week(2011)
+        day1 = model.Day(datetime.date(year=2011, month=1, day=1))
+        day2 = model.Day(datetime.date(year=2011, month=1, day=2))
+        week.entries.append(day1)
+        week.entries.append(day2)
+        self.assertEqual(len(week.days()),2)
+
+
     def test_carryforward_detected(self):
+        """week.has_carryforward detects CarryForwardIndicator."""
         w = model.Week(2011)
         co = model.CarryForwardIndicator()
         assert w.has_carryforward() == False
@@ -38,6 +49,7 @@ class Test(unittest.TestCase):
         assert w.has_carryforward() == True
 
     def test_ensure_header_exists(self):
+        """Ensure ensure_header_exists works."""
         week = model.Week(2011)
         self.assertEqual(len(week.entries), 0)
 
@@ -61,7 +73,6 @@ class Test(unittest.TestCase):
         day.activities.append(todo)
         
         self.assertEqual(len(model.find_todos_in_week(week)), 1)
-
 
 if __name__ == "__main__":
     unittest.main()
