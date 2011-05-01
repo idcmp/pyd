@@ -6,6 +6,9 @@ Each model class implements dump().
 '''
 
 import string
+import re
+from datetime import datetime, date
+from collections import deque
 
 diary_reader = []
 week_entries = []
@@ -48,10 +51,15 @@ class Week:
     def responsibility(parent, line):
         if parent is None:
             return True
+        elif isinstance(parent, Week) and line == None:
+            return True
     
     @staticmethod
     def handle_line(parent, line):
-            # A hack to figure out which year to use.
+        if line == None:
+            return None
+            
+        # A hack to figure out which year to use.
         if string.find(line, '2010') > -1:
             year = 2010
         elif string.find(line, '2011') > -1:
@@ -77,19 +85,21 @@ class WeekEntry(object):
         """Return True, False, None or an integer depending on if this class is responsible for
         parsing a given line.  False, None and 0 are identical (not responsible).  True is the same
         as returning an integer of 100.  If multiple classes return integers or true, the one with
-        the highest value is called to parse the line.  Results are effectively undefined for multiple
-        classes returning the same value (but only one will be called).  Note that a call with parent of None
-        and line equaling the filename as arguments is always done first to find the parent node."""
+        the highest value is called first to handle the line.  
+        
+        Results are effectively undefined for multiple classes returning the same value.  
+        Note that a call with parent of None and line equaling the filename as arguments is always done first to find the parent node.
+        Note that a call with the current parent and a line equaling None is done to indicate EOF."""
         return False
     
     @staticmethod
     def handle_line(parent, line):
-        """If this handler is elected, this method will be called. Implementors must 1) attach
-        newly created entities to the parent correctly, 2) return the appropriate "parent".  If
-        this handler is expecting more data, it can return itself, otherwise it likely wants
-        to return the parent it was passed in.  Returning None is the same as returning the passed
-        in parent."""
-        pass
+        """When this handler is elected, this method will be called. Implementors must 1) attach
+        newly created entities to the parent correctly, 2) return the appropriate "parent" to push
+        onto the stack (or False). Returning the same parent as was passed in keeps the parent the same. Returning
+        None will pop another layer off the stack.  Returning False will indicate that the particular
+        handler was unable to process the lineNote: The last entry in the stack is None"""
+        return False
         
 @weekentry
 class FreeformWeekEntry(WeekEntry):
@@ -185,7 +195,38 @@ class Day(WeekEntry):
     
     @staticmethod
     def responsibility(parent, line):
-        return line.startswith("** ")
+        
+        if line.startswith("** ") and isinstance(parent, Week):
+            return True
+        elif line == "" and isinstance(parent, Day):
+            return True
+        
+
+    @staticmethod
+    def handle_line(parent, line):
+        
+        if line == "":
+            # Pop stack out of Day.
+            return None
+        
+        m = re.match(r"\*\* ((Sun|Mon|Tue|Wed|Thu|Fri|Sat)) (\d+)-(\w+)(.*)", line)
+        if m:
+            dt = datetime.strptime(m.group(4), "%b")
+            current_day = Day(date(parent.year, dt.month, int(m.group(3))))
+            parent.entries.append(current_day)
+            if m.group(5):
+                inout = m.group(5)
+                inout = string.strip(inout, "(): ")
+                inout = deque(re.split("\s+", inout))
+                
+                while len(inout) > 0:
+                    label = inout.popleft()
+                    if re.match("i", label):
+                        current_day.in_at = inout.popleft()
+                    if re.match("o", label):
+                        current_day.out_at = inout.popleft()
+            return current_day
+        return False
     
     def __eq__(self, other):
         """Two Day objects are identical if they have the same day/month.
@@ -209,6 +250,10 @@ class DayActivity:
     @staticmethod
     def responsibility(parent, line):
         return False
+    
+    @staticmethod
+    def handle_line(parent, line):
+        return parent
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -227,8 +272,14 @@ class DayBullet(DayActivity):
 
     @staticmethod
     def responsibility(parent, line):
-        if line.startswith("- "):
+        if line.startswith("- ") and isinstance(parent, Day):
             return 20
+
+    @staticmethod
+    def handle_line(parent, line):
+        bullet = DayBullet(string.strip(line[1:]))
+        parent.add_activity(bullet)
+        return parent
 
     def __eq__(self, other):
         return isinstance(other, DayBullet) and other.msg == self.msg
@@ -249,8 +300,25 @@ class DayMultiBullet(DayActivity):
 
     @staticmethod
     def responsibility(parent, line):
-        return line.startswith("-- ")
-    
+        """This class will push itself onto the stack."""
+        return (line.startswith("-- ") and isinstance(parent, Day)) or isinstance(parent, DayMultiBullet)
+
+    @staticmethod
+    def handle_line(parent, line):
+        """If we're already reading a multibullet, then continue until we reach "--" on a blank line.
+        Otherwise, create a new DayMultiBullet and push it onto the stack."""
+        
+        if isinstance(parent, DayMultiBullet):
+            if line == "--":
+                parent.msg = string.rstrip(parent.msg, "\r\n \t")
+                return
+            parent.msg += "\n" + line
+            return parent
+        else:            
+            last_activity = DayMultiBullet(string.strip(line[2:]))
+            parent.add_activity(last_activity)
+            return last_activity
+        
     def __eq__(self, other):
         return isinstance(other, DayMultiBullet) and other.msg == self.msg
     
@@ -271,7 +339,16 @@ class DayDone(DayActivity):
         
     @staticmethod
     def responsibility(parent, line):
-        return line.startswith("- done:")
+        return line.startswith("- done:") and isinstance(parent, Day)
+
+    @staticmethod
+    def handle_line(parent, line):
+        m = re.match(r"- done: #(\d+)(.*)", line)
+        if m:
+            last_activity = DayDone(m.group(1), m.group(2))
+            parent.add_activity(last_activity)
+            return parent
+        return False
 
     def __eq__(self, other):
         return isinstance(other, DayDone) and self.seq == other.seq and other.msg == self.msg
@@ -323,7 +400,22 @@ class DayTodo(DayActivity):
 
     @staticmethod
     def responsibility(parent, line):
-        return line.startswith("- todo")
+        return line.startswith("- todo") and isinstance(parent, Day)
+
+    @staticmethod
+    def handle_line(parent, line):
+        m = re.match(r"- todo\(#(.*)\): (.*)", line)
+        if m:
+            last_activity = DayTodo(m.group(2), m.group(1))
+            parent.add_activity(last_activity)
+            return parent
+
+        if line.startswith("- todo:"):
+            last_activity = DayTodo(string.strip(line[7:]))
+            parent.add_activity(last_activity)
+            return parent
+
+        return False
 
 
 ###
@@ -351,3 +443,4 @@ def find_todos_in_week(week):
                     todos.remove(todo)
                     break
     return todos
+
