@@ -5,20 +5,26 @@ Each model class implements dump().
 
 '''
 
+import string
+
+diary_reader = []
 week_entries = []
 day_activities = []
 carryforward_participants = []
 
 def carryforward(cls):
     carryforward_participants.append(cls)
+    diary_reader.append(cls)
     return cls
 
 def weekentry(cls):
     week_entries.append(cls)
+    diary_reader.append(cls)
     return cls
 
 def dayactivity(cls):
     day_activities.append(cls)
+    diary_reader.append(cls)
     return cls
 
 class Week:
@@ -33,11 +39,30 @@ class Week:
     
     def days(self):
         return filter(lambda entry: isinstance(entry, Day), self.entries)
-        
+    
     def dump(self, to):
         for entry in self.entries:
             entry.dump(to)
             
+    @staticmethod
+    def responsibility(parent, line):
+        if parent is None:
+            return True
+    
+    @staticmethod
+    def handle_line(parent, line):
+            # A hack to figure out which year to use.
+        if string.find(line, '2010') > -1:
+            year = 2010
+        elif string.find(line, '2011') > -1:
+            year = 2011
+        elif string.find(line, '2012') > -1:
+            year = 2012
+        else:
+            year = 2011
+
+        return Week(year)
+        
 class WeekEntry(object):
     """Abstract class from which all things in a week are derived.
     
@@ -46,7 +71,26 @@ class WeekEntry(object):
     """
     def dump(self, to):
         pass
+
+    @staticmethod
+    def responsibility(parent, line):
+        """Return True, False, None or an integer depending on if this class is responsible for
+        parsing a given line.  False, None and 0 are identical (not responsible).  True is the same
+        as returning an integer of 100.  If multiple classes return integers or true, the one with
+        the highest value is called to parse the line.  Results are effectively undefined for multiple
+        classes returning the same value (but only one will be called).  Note that a call with parent of None
+        and line equaling the filename as arguments is always done first to find the parent node."""
+        return False
     
+    @staticmethod
+    def handle_line(parent, line):
+        """If this handler is elected, this method will be called. Implementors must 1) attach
+        newly created entities to the parent correctly, 2) return the appropriate "parent".  If
+        this handler is expecting more data, it can return itself, otherwise it likely wants
+        to return the parent it was passed in.  Returning None is the same as returning the passed
+        in parent."""
+        pass
+        
 @weekentry
 class FreeformWeekEntry(WeekEntry):
     """Generic place holder for "things we found in the file that aren't something else."""
@@ -56,12 +100,36 @@ class FreeformWeekEntry(WeekEntry):
         
     def dump(self, to):
         to.write(self.text + "\n")
+        
+    @staticmethod
+    def responsibility(parent, line):
+        """Defacto handler for otherwise unhandled lines who have Week as their parent."""
+        if isinstance(parent, Week):
+            return 1
+
+    @staticmethod
+    def handle_line(parent, line):
+        ff = FreeformWeekEntry(line)
+        parent.entries.append(ff)
+        return parent
 
 @weekentry
 class CarryForwardIndicator(WeekEntry):
 
+    indicator = "++carriedforward"
+    
+    @staticmethod
+    def responsibility(parent, line):
+        return line == CarryForwardIndicator.indicator and isinstance(parent, Week)
+    
+    @staticmethod
+    def handle_line(parent, line):
+        cf = CarryForwardIndicator()
+        parent.entries.append(cf)
+        return parent
+
     def dump(self, to):
-        to.write("++carriedforward")
+        to.write(CarryForwardIndicator.indicator)
         
 @weekentry
 class Day(WeekEntry):
@@ -115,6 +183,10 @@ class Day(WeekEntry):
         for activity in self.activities:
                 activity.dump(to)
     
+    @staticmethod
+    def responsibility(parent, line):
+        return line.startswith("** ")
+    
     def __eq__(self, other):
         """Two Day objects are identical if they have the same day/month.
         
@@ -134,6 +206,10 @@ class DayActivity:
     def dump(self, to):
         pass
 
+    @staticmethod
+    def responsibility(parent, line):
+        return False
+
     def __ne__(self, other):
         return not self.__eq__(other)
 
@@ -148,6 +224,11 @@ class DayBullet(DayActivity):
     def dump(self, to):
         to.write("- " + self.msg)
         to.write("\n")
+
+    @staticmethod
+    def responsibility(parent, line):
+        if line.startswith("- "):
+            return 20
 
     def __eq__(self, other):
         return isinstance(other, DayBullet) and other.msg == self.msg
@@ -165,6 +246,10 @@ class DayMultiBullet(DayActivity):
     def dump(self, to):
         to.write("-- " + self.msg)
         to.write("\n--\n")
+
+    @staticmethod
+    def responsibility(parent, line):
+        return line.startswith("-- ")
     
     def __eq__(self, other):
         return isinstance(other, DayMultiBullet) and other.msg == self.msg
@@ -184,6 +269,10 @@ class DayDone(DayActivity):
             to.write(self.msg)
         to.write("\n")
         
+    @staticmethod
+    def responsibility(parent, line):
+        return line.startswith("- done:")
+
     def __eq__(self, other):
         return isinstance(other, DayDone) and self.seq == other.seq and other.msg == self.msg
 
@@ -232,7 +321,14 @@ class DayTodo(DayActivity):
         to.write(": " + self.msg)
         to.write("\n")
 
+    @staticmethod
+    def responsibility(parent, line):
+        return line.startswith("- todo")
 
+
+###
+# Static helper methods.
+###
 def find_todos_in_week(week):
     '''Return all DayTodo instances in a Week.
     

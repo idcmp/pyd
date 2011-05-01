@@ -1,4 +1,3 @@
-
 '''
 Used to create file names for diary files.
 '''
