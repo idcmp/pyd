@@ -6,7 +6,8 @@ Model types must implement:
     - responsibility(self,parent,line) : see WeekEntry.responsibility
     - handle_line(self,parent,line) : see WeekEntry.handle_line
     - self.parent - returns the parent of the current object.
-
+    - self.entries - if the class pushes itself as parent during handle_line, it must support
+    adding children through self.entries.append()
 '''
 
 import string
