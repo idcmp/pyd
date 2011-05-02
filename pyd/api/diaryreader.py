@@ -2,142 +2,96 @@
 This module is in charge of deserializing a diary file.
 '''
 
-from datetime import datetime, date
-from collections import deque
 import codecs
 import string
-
-import re #yeah yeah
+import os
 
 from pyd.api import diarymodel
 
 class DiaryReader:
     '''Read a diary file into a diarymodel.
     '''
+    
+    def debug(self, msg):
+        if os.getenv("DEBUG", "0") != "0":
+            print msg
+    
     def __init__(self):
-        self.state = 'ROOT'
-        self.linereader = { 'ROOT': self.read_root,
-                           'DAY': self.read_day,
-                           'MULTILINEACTIVITY': self.read_multiline }
+        """Initialize the reading stack. The bottom-most stack frame is a None."""
+        self.state_stack = list()
+        self.state_stack.append(None)
     
     def read_file(self, filename):
+        """Read in filename, passing each line to _handle_line.  Note: If filename is not
+        found, this method will return an empty week whose persistent field is set to false."""
         
-        # A hack to figure out which year to use.
-        if string.find(filename, '2010') > -1:
-            year = 2010
-        elif string.find(filename, '2011') > -1:
-            year = 2011
-        elif string.find(filename, '2012') > -1:
-            year = 2012
-        else:
-            year = 2011
-  
-        self.week = diarymodel.Week(year)
-        self.week.persistent = True
-        
+        self.persistent = True
         try:
+            # We pass parent=None, line=filename in as the first-ever entry to the handlers,
+            # this allows Week to create itself based on the filename.
+            self._handle_line(filename)
             with codecs.open(filename, encoding='utf-8') as diary:
                 for line in diary:
+                    # A raw line is stripped of trailing spaces.
                     cooked = string.rstrip(line)
-                    if self.linereader.get(self.state)(cooked) == False:
-                        ff = diarymodel.FreeformWeekEntry(cooked)
-                        self.week.entries.append(ff)
-                        
+                    self._handle_line(cooked)                        
         except IOError:
-            self.week.persistent = False
-        
-        
-        return self.week
-    
-    def read_multiline(self, line):
-        '''Private.'''
-        if line == "--":
-            self.last_activity.msg = string.rstrip(self.last_activity.msg, "\r\n \t")
-            self.state = 'DAY'
-            return
-        
-        self.last_activity.msg += "\n" + line
+            self.persistent = False
+      
+        # Now the file has been completely read.  We pop the stack
+        # until we find the Week node, or until we find None.  This
+        # part of the code is the only part that actually knows that
+        # Week is the top most parent.
+        while True:
+            frame = self.state_stack.pop()
+            if isinstance(frame, diarymodel.Week):
+                frame.persistent = self.persistent
+                return frame
+            elif frame == None:
+                return None
 
-
-    def read_day(self, line):
-        '''Private.'''
-        if len(line) == 0:
-            self.state = 'ROOT'
-            return
+    def _handle_line(self, line):
+        """Private.  Determine which handlers can process a line.  Call each one in
+        priority order until one doesn't return False."""
         
-        if line.startswith("--"):
-            self.last_activity = diarymodel.DayMultiBullet(string.strip(line[2:]))
-            self.current_day.add_activity(self.last_activity)
-            self.state = 'MULTILINEACTIVITY'
-            return
+        handler_tuples = []
         
+        self.debug("line: %s" % (line))
+        
+        # Peek at the top of the stack.
+        parent = self.state_stack[len(self.state_stack) - 1]
+        
+        for handler in diarymodel.diary_reader:
+            # For each handler, see if it can handle this line.
+            res = handler.responsibility(parent, line)
+            self.debug("%s.responsibility(%s,%s) returned %s" % (handler, parent, line, res))
+            if res is True:
+                handler_tuples += [(100, handler)]
+            elif res is False or res == 0 or res == None:
+                continue
+            else:
+                handler_tuples += [(res, handler)]
 
-        m = re.match(r"- todo\(#(.*)\): (.*)", line)
-        if m:
-            self.last_activity = diarymodel.DayTodo(m.group(2), m.group(1))
-            self.current_day.add_activity(self.last_activity)
-            return
+        # Sort the handlers so highest ranked ones come first.
+        sorted_handlers = sorted(handler_tuples, key=lambda handler: handler[0], reverse=True)
                 
-        if line.startswith("- todo:"):
-            self.last_activity = diarymodel.DayTodo(string.strip(line[7:]))
-            self.current_day.add_activity(self.last_activity)
-            return
+        for v, handler in sorted_handlers:
+            # Call the handler.  Handler will return what to do with the stack.
+            res = handler.handle_line(parent, line)
 
-        m = re.match(r"- done: #(\d+)(.*)", line)
-        if m:
-            self.last_activity = diarymodel.DayDone(m.group(1),m.group(2))
-            self.current_day.add_activity(self.last_activity)
-            return
-    
-        if line == "-":
-            # remove left over prompts
-            return
+            if res is False:
+                # handler did not process the line, keep trying.
+                continue
+            elif res == None:
+                # handler processed line and the line ended a particular state.
+                self.state_stack.pop()
+                return
+            elif res == parent:
+                # handler processed line and state remained the same.
+                return
+            else:
+                # Handler processed state and wants to push a new state ontop of the stack.
+                self.state_stack.append(res)
+                return
         
-        if line.startswith("-"):
-            self.last_activity = diarymodel.DayBullet(string.strip(line[1:]))
-            self.current_day.add_activity(self.last_activity)
-            return
-
-        return False
-
-    def read_root(self, line):
-        '''Private.'''
-        m = re.match(r"- todo\(#(.*)\): (.*)", line)
-        if m:
-            todo = diarymodel.DayTodo(m.group(2), m.group(1))
-            self.week.entries.append(todo)
-            return
-
-        if line == "++carriedforward":
-            cf = diarymodel.CarryForwardIndicator()
-            self.week.entries.append(cf)
-            return
-
-        m = re.match(r"\*\* ((Sun|Mon|Tue|Wed|Thu|Fri|Sat)) (\d+)-(\w+)(.*)", line)
-        if m:
-            dt = datetime.strptime(m.group(4), "%b")
-            self.current_day = diarymodel.Day(date(self.week.year, dt.month, int(m.group(3))))
-            self.week.entries.append(self.current_day)
-            if m.group(5):
-                inout = m.group(5)
-                inout = string.strip(inout, "(): ")
-                inout = deque(re.split("\s+", inout))
-                
-                while len(inout) > 0:
-                    label = inout.popleft()
-                    if re.match("i", label):
-                        self.current_day.in_at = inout.popleft()
-                    if re.match("o", label):
-                        self.current_day.out_at = inout.popleft()
-            self.state = 'DAY'   
-            return
-          
-        if len(line) > 0:
-            self.week.entries.append(diarymodel.FreeformWeekEntry(line))
-            return
-        else:
-            # is swallowing blank lines considered bad?
-            # effectively this pushes floating entries into the previous day
-            return
-        
-        return False
+        print "WARNING: NO HANDLER FOR LINE " + line

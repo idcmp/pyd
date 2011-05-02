@@ -1,7 +1,11 @@
 '''
 A model to describe a week in the life of pyd.
 
-Each model class implements dump().
+Model types must implement:
+    - dump(self,stream) which serializes
+    - responsibility(self,parent,line) : see WeekEntry.responsibility
+    - handle_line(self,parent,line) : see WeekEntry.handle_line
+    - self.parent - returns the parent of the current object.
 
 '''
 
@@ -30,6 +34,11 @@ def dayactivity(cls):
     diary_reader.append(cls)
     return cls
 
+def linehandler(cls):
+    diary_reader.append(cls)
+    return cls
+
+@linehandler
 class Week:
         
     def __init__(self, year):
@@ -49,15 +58,15 @@ class Week:
             
     @staticmethod
     def responsibility(parent, line):
-        if parent is None:
-            return True
-        elif isinstance(parent, Week) and line == None:
-            return True
+        return  (parent is None) or  (isinstance(parent, Week) and (line == "" or line == None))
     
     @staticmethod
     def handle_line(parent, line):
         if line == None:
             return None
+        
+        if isinstance(parent, Week) and line == "":
+            return parent
             
         # A hack to figure out which year to use.
         if string.find(line, '2010') > -1:
@@ -69,7 +78,9 @@ class Week:
         else:
             year = 2011
 
-        return Week(year)
+        week = Week(year)
+        week.parent = parent
+        return week
         
 class WeekEntry(object):
     """Abstract class from which all things in a week are derived.
@@ -116,11 +127,13 @@ class FreeformWeekEntry(WeekEntry):
         """Defacto handler for otherwise unhandled lines who have Week as their parent."""
         if isinstance(parent, Week):
             return 1
-
+        return False
+    
     @staticmethod
     def handle_line(parent, line):
         ff = FreeformWeekEntry(line)
         parent.entries.append(ff)
+        ff.parent = parent
         return parent
 
 @weekentry
@@ -130,16 +143,22 @@ class CarryForwardIndicator(WeekEntry):
     
     @staticmethod
     def responsibility(parent, line):
-        return line == CarryForwardIndicator.indicator and isinstance(parent, Week)
+        return line == CarryForwardIndicator.indicator
     
     @staticmethod
     def handle_line(parent, line):
         cf = CarryForwardIndicator()
-        parent.entries.append(cf)
+        cfp = parent
+
+        if isinstance(cfp, Day):
+            cfp = cfp.parent
+            
+        cf.parent = cfp
+        cfp.entries.append(cf)
         return parent
 
     def dump(self, to):
-        to.write(CarryForwardIndicator.indicator)
+        to.write(CarryForwardIndicator.indicator + "\n")
         
 @weekentry
 class Day(WeekEntry):
@@ -150,18 +169,15 @@ class Day(WeekEntry):
     
     activity_types = []
     
-    def add_activity(self, act):
-        self.activities.append(act)
-
     def todos(self):
-        return filter(lambda entry: isinstance(entry, DayTodo), self.activities)
+        return filter(lambda entry: isinstance(entry, DayTodo), self.entries)
     
     def dones(self):
-        return filter(lambda entry: isinstance(entry, DayDone), self.activities)
+        return filter(lambda entry: isinstance(entry, DayDone), self.entries)
 
     def __init__(self, my_day):
         self.my_day = my_day
-        self.activities = []
+        self.entries = []
         self.in_at = None
         self.out_at = None
         
@@ -190,8 +206,8 @@ class Day(WeekEntry):
 
         to.write("\n")
 
-        for activity in self.activities:
-                activity.dump(to)
+        for entry in self.entries:
+                entry.dump(to)
     
     @staticmethod
     def responsibility(parent, line):
@@ -213,6 +229,7 @@ class Day(WeekEntry):
         if m:
             dt = datetime.strptime(m.group(4), "%b")
             current_day = Day(date(parent.year, dt.month, int(m.group(3))))
+            current_day.parent = parent
             parent.entries.append(current_day)
             if m.group(5):
                 inout = m.group(5)
@@ -225,6 +242,7 @@ class Day(WeekEntry):
                         current_day.in_at = inout.popleft()
                     if re.match("o", label):
                         current_day.out_at = inout.popleft()
+            
             return current_day
         return False
     
@@ -233,6 +251,9 @@ class Day(WeekEntry):
         
         It's not safe to compare Day objects from different years.
         """
+        if not isinstance(other, Day):
+            return False
+        
         return other.my_day.month == self.my_day.month and other.my_day.day == self.my_day.day
 
     def __ne__(self, other):
@@ -258,6 +279,31 @@ class DayActivity:
     def __ne__(self, other):
         return not self.__eq__(other)
 
+
+@dayactivity
+class FreeformDayEntry(DayActivity):
+    """Generic place holder for things we found in the file that aren't something else, but for Days."""
+    
+    def __init__(self, text):
+        self.text = text
+        
+    def dump(self, to):
+        to.write(self.text + "\n")
+        
+    @staticmethod
+    def responsibility(parent, line):
+        """Defacto handler for otherwise unhandled lines who have Day as their parent."""
+        if isinstance(parent, Day):
+            return 1
+        return False
+    
+    @staticmethod
+    def handle_line(parent, line):
+        ff = FreeformDayEntry(line)
+        parent.entries.append(ff)
+        ff.parent = parent
+        return parent
+
 @dayactivity
 class DayBullet(DayActivity):
     """A thing you did today.  Starts with "- " and contains a single line of text.
@@ -274,11 +320,17 @@ class DayBullet(DayActivity):
     def responsibility(parent, line):
         if line.startswith("- ") and isinstance(parent, Day):
             return 20
+        elif line == "-" and isinstance(parent, Day):
+            return 50
 
     @staticmethod
     def handle_line(parent, line):
+        if line == "-":
+            return parent
+        
         bullet = DayBullet(string.strip(line[1:]))
-        parent.add_activity(bullet)
+        bullet.parent = parent
+        parent.entries.append(bullet)
         return parent
 
     def __eq__(self, other):
@@ -301,7 +353,7 @@ class DayMultiBullet(DayActivity):
     @staticmethod
     def responsibility(parent, line):
         """This class will push itself onto the stack."""
-        return (line.startswith("-- ") and isinstance(parent, Day)) or isinstance(parent, DayMultiBullet)
+        return (line.startswith("--") and isinstance(parent, Day)) or isinstance(parent, DayMultiBullet)
 
     @staticmethod
     def handle_line(parent, line):
@@ -316,7 +368,8 @@ class DayMultiBullet(DayActivity):
             return parent
         else:            
             last_activity = DayMultiBullet(string.strip(line[2:]))
-            parent.add_activity(last_activity)
+            last_activity.parent = parent
+            parent.entries.append(last_activity)
             return last_activity
         
     def __eq__(self, other):
@@ -346,7 +399,8 @@ class DayDone(DayActivity):
         m = re.match(r"- done: #(\d+)(.*)", line)
         if m:
             last_activity = DayDone(m.group(1), m.group(2))
-            parent.add_activity(last_activity)
+            last_activity.parent = parent
+            parent.entries.append(last_activity)
             return parent
         return False
 
@@ -400,19 +454,21 @@ class DayTodo(DayActivity):
 
     @staticmethod
     def responsibility(parent, line):
-        return line.startswith("- todo") and isinstance(parent, Day)
+        return line.startswith("- todo") and (isinstance(parent, Day) or isinstance(parent, Week))
 
     @staticmethod
     def handle_line(parent, line):
         m = re.match(r"- todo\(#(.*)\): (.*)", line)
         if m:
             last_activity = DayTodo(m.group(2), m.group(1))
-            parent.add_activity(last_activity)
+            last_activity.parent = parent
+            parent.entries.append(last_activity)
             return parent
 
         if line.startswith("- todo:"):
             last_activity = DayTodo(string.strip(line[7:]))
-            parent.add_activity(last_activity)
+            last_activity.parent = parent
+            parent.entries.append(last_activity)
             return parent
 
         return False
