@@ -2,3 +2,5 @@
 pyd.egg-info
 distribute-*.egg
 distribute-*.tar.gz
+sample-*.txt
+
