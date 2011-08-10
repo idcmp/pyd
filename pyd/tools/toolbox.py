@@ -35,3 +35,7 @@ def read_and_rewrite(filename):
     """
     week = reader.DiaryReader().read_file(filename)
     writer.DiaryWriter().write_file(filename, week)
+
+def is_today(day):
+    """Is the passed in Day object "today" ?"""
+    return model.Day(date.today()) == day
