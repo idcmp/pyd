@@ -76,6 +76,8 @@ class Week:
             year = 2011
         elif string.find(line, '2012') > -1:
             year = 2012
+        elif string.find(line, '2013') > -1:
+            year = 2013
         else:
             year = 2011
 
@@ -304,6 +306,39 @@ class FreeformDayEntry(DayActivity):
         parent.entries.append(ff)
         ff.parent = parent
         return parent
+
+@dayactivity
+class PublicDayBullet(DayActivity):
+    """A thing you did today.  Starts with "+ " and contains a single line of text. This is identical to DayBullet
+    except that it's considered to be a "public" entry; something you could post to a timesheet or scrum update.
+    """
+
+    def __init__(self, msg):
+        self.msg = msg
+
+    def dump(self, to):
+        to.write("+ " + self.msg)
+        to.write("\n")
+
+    @staticmethod
+    def responsibility(parent, line):
+        if line.startswith("+ ") and isinstance(parent, Day):
+            return 20
+        elif line == "+" and isinstance(parent, Day):
+            return 50
+
+    @staticmethod
+    def handle_line(parent, line):
+        if line == "+":
+            return parent
+
+        bullet = PublicDayBullet(string.strip(line[1:]))
+        bullet.parent = parent
+        parent.entries.append(bullet)
+        return parent
+
+    def __eq__(self, other):
+        return isinstance(other, DayBullet) and other.msg == self.msg
 
 @dayactivity
 class DayBullet(DayActivity):
