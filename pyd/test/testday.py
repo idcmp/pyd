@@ -38,6 +38,7 @@ class Test(unittest.TestCase):
         day.entries.append(diarymodel.DayBullet('one'))
         day.entries.append(diarymodel.DayBullet('two'))
         day.entries.append(diarymodel.DayBullet('three'))
+        day.entries.append(diarymodel.PublicDayBullet('public four'))
         day.entries.append(diarymodel.DayMultiBullet('four\nfive\nsix'))
         
         week = diarymodel.Week(2011)
