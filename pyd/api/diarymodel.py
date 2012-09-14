@@ -338,7 +338,7 @@ class PublicDayBullet(DayActivity):
         return parent
 
     def __eq__(self, other):
-        return isinstance(other, DayBullet) and other.msg == self.msg
+        return isinstance(other, PublicDayBullet) and other.msg == self.msg
 
 @dayactivity
 class DayBullet(DayActivity):
