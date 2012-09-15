@@ -1,32 +1,27 @@
 #!/usr/bin/python
-'''
+"""
 Created on Aug 10, 2011
 
 @author: idcmp
-'''
-
+"""
 
 from pyd.api import naming
-from pyd.api import editor
 from pyd.api import carryforward as cf
 from pyd.tools import toolbox
 
-from pyd.api import diarymodel
 from pyd.api import diaryreader
 from pyd.api import diarywriter
 
 from datetime import datetime
-
-from codecs import open
 
 if __name__ == '__main__':
     current_diary = naming.current_name()
     cf.perform_carryforward()
     toolbox.ensure_current_header_exists(current_diary)
 
-    week= diaryreader.DiaryReader().read_file(current_diary)
-    
-    today = filter(lambda entry: toolbox.is_today(entry),week.days())[0];
+    week = diaryreader.DiaryReader().read_file(current_diary)
+
+    today = filter(lambda entry: toolbox.is_today(entry), week.days())[0]
 
     today.set_out_at(datetime.now().strftime("%H:%M"))
-    diarywriter.DiaryWriter().write_file(current_diary,week)
+    diarywriter.DiaryWriter().write_file(current_diary, week)

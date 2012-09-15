@@ -1,4 +1,4 @@
-'''
+"""
 A model to describe a week in the life of pyd.
 
 Model types must implement:
@@ -8,7 +8,7 @@ Model types must implement:
     - self.parent - returns the parent of the current object.
     - self.entries - if the class pushes itself as parent during handle_line, it must support
     adding children through self.entries.append()
-'''
+"""
 
 import string
 import re
@@ -28,50 +28,53 @@ def carryforward(cls):
     diary_reader.append(cls)
     return cls
 
+
 def weekentry(cls):
     week_entries.append(cls)
     diary_reader.append(cls)
     return cls
+
 
 def dayactivity(cls):
     day_activities.append(cls)
     diary_reader.append(cls)
     return cls
 
+
 def linehandler(cls):
     diary_reader.append(cls)
     return cls
 
+
 @linehandler
 class Week:
-        
     def __init__(self, year):
         self.entries = []
         self.year = year
         self.persistent = False
-    
+
     def has_carryforward(self):
         return len(filter(lambda entry: isinstance(entry, CarryForwardIndicator), self.entries)) != 0
-    
+
     def days(self):
         return filter(lambda entry: isinstance(entry, Day), self.entries)
-    
+
     def dump(self, to):
         for entry in self.entries:
             entry.dump(to)
-            
+
     @staticmethod
     def responsibility(parent, line):
-        return  (parent is None) or  (isinstance(parent, Week) and (line == "" or line == None))
-    
+        return  (parent is None) or  (isinstance(parent, Week) and (line == "" or line is None))
+
     @staticmethod
     def handle_line(parent, line):
-        if line == None:
+        if line is None:
             return None
-        
+
         if isinstance(parent, Week) and line == "":
             return parent
-            
+
         # A hack to figure out which year to use.
         if string.find(line, '2010') > -1:
             year = 2010
@@ -87,13 +90,15 @@ class Week:
         week = Week(year)
         week.parent = parent
         return week
-        
+
+
 class WeekEntry(object):
     """Abstract class from which all things in a week are derived.
     
         Usually a week just has Day objects in it, however directly referencing Day runs into a challenge
         where there may be other kinds of entries (such as freeform text) that we don't want to lose.
     """
+
     def dump(self, to):
         pass
 
@@ -108,7 +113,7 @@ class WeekEntry(object):
         Note that a call with parent of None and line equaling the filename as arguments is always done first to find the parent node.
         Note that a call with the current parent and a line equaling None is done to indicate EOF."""
         return False
-    
+
     @staticmethod
     def handle_line(parent, line):
         """When this handler is elected, this method will be called. Implementors must 1) attach
@@ -117,24 +122,25 @@ class WeekEntry(object):
         None will pop another layer off the stack.  Returning False will indicate that the particular
         handler was unable to process the lineNote: The last entry in the stack is None"""
         return False
-        
+
+
 @weekentry
 class FreeformWeekEntry(WeekEntry):
     """Generic place holder for "things we found in the file that aren't something else."""
-    
+
     def __init__(self, text):
         self.text = text
-        
+
     def dump(self, to):
         to.write(self.text + "\n")
-        
+
     @staticmethod
     def responsibility(parent, line):
         """Defacto handler for otherwise unhandled lines who have Week as their parent."""
         if isinstance(parent, Week):
             return 1
         return False
-    
+
     @staticmethod
     def handle_line(parent, line):
         ff = FreeformWeekEntry(line)
@@ -142,15 +148,15 @@ class FreeformWeekEntry(WeekEntry):
         ff.parent = parent
         return parent
 
+
 @weekentry
 class CarryForwardIndicator(WeekEntry):
-
     indicator = "++carriedforward"
-    
+
     @staticmethod
     def responsibility(parent, line):
         return line == CarryForwardIndicator.indicator
-    
+
     @staticmethod
     def handle_line(parent, line):
         cf = CarryForwardIndicator()
@@ -158,26 +164,27 @@ class CarryForwardIndicator(WeekEntry):
 
         if isinstance(cfp, Day):
             cfp = cfp.parent
-            
+
         cf.parent = cfp
         cfp.entries.append(cf)
         return parent
 
     def dump(self, to):
         to.write(CarryForwardIndicator.indicator + "\n")
-        
+
+
 @weekentry
 class Day(WeekEntry):
     """A day contains DayActivities and some metadata.
     
     A day knows which year its in from the Week.
     """
-    
+
     activity_types = []
-    
+
     def todos(self):
         return filter(lambda entry: isinstance(entry, DayTodo), self.entries)
-    
+
     def dones(self):
         return filter(lambda entry: isinstance(entry, DayDone), self.entries)
 
@@ -186,56 +193,52 @@ class Day(WeekEntry):
         self.entries = []
         self.in_at = None
         self.out_at = None
-        
+
     def set_in_at(self, in_at):
         self.in_at = in_at
-    
+
     def set_out_at(self, out_at):
         self.out_at = out_at
 
     def dump_header(self, to):
-
         to.write("\n** " + self.my_day.strftime("%a %d-%b"))
-        
+
         # It's perfectly valid to have no "out", in which case a closing paren is
         # not supposed to be there.
-        if self.in_at != None or self.out_at != None:
+        if self.in_at is not None or self.out_at is not None:
             to.write(" (")
 
-            if self.in_at != None:
+            if self.in_at is not None:
                 to.write("in " + self.in_at)
-                if self.out_at != None:
+                if self.out_at is not None:
                     to.write(" ")
 
-            if self.out_at != None:
+            if self.out_at is not None:
                 to.write("out " + self.out_at)
                 to.write(")")
 
         to.write("\n")
 
     def dump(self, to):
-
-        dump_header(to)
+        self.dump_header(to)
 
         for entry in self.entries:
-                entry.dump(to)
-    
+            entry.dump(to)
+
     @staticmethod
     def responsibility(parent, line):
-        
         if line.startswith("** ") and isinstance(parent, Week):
             return True
         elif line == "" and isinstance(parent, Day):
             return True
-        
+
 
     @staticmethod
     def handle_line(parent, line):
-        
         if line == "":
             # Pop stack out of Day.
             return None
-        
+
         m = re.match(r"\*\* ((Sun|Mon|Tue|Wed|Thu|Fri|Sat)) (\d+)-(\w+)(.*)", line)
         if m:
             dt = datetime.strptime(m.group(4), "%b")
@@ -246,17 +249,17 @@ class Day(WeekEntry):
                 inout = m.group(5)
                 inout = string.strip(inout, "(): ")
                 inout = deque(re.split("\s+", inout))
-                
+
                 while len(inout) > 0:
                     label = inout.popleft()
                     if re.match("i", label):
                         current_day.in_at = inout.popleft()
                     if re.match("o", label):
                         current_day.out_at = inout.popleft()
-            
+
             return current_day
         return False
-    
+
     def __eq__(self, other):
         """Two Day objects are identical if they have the same day/month.
         
@@ -264,25 +267,26 @@ class Day(WeekEntry):
         """
         if not isinstance(other, Day):
             return False
-        
+
         return other.my_day.month == self.my_day.month and other.my_day.day == self.my_day.day
 
     def __ne__(self, other):
         return not self.__eq__(other)
-    
+
+
 class DayActivity:
-    """Abstract class for activities that occur in a day."""    
+    """Abstract class for activities that occur in a day."""
 
     def __init__(self):
         self.msg = None
-        
+
     def dump(self, to):
         pass
 
     @staticmethod
     def responsibility(parent, line):
         return False
-    
+
     @staticmethod
     def handle_line(parent, line):
         return parent
@@ -294,20 +298,21 @@ class DayActivity:
 @dayactivity
 class FreeformDayEntry(DayActivity):
     """Generic place holder for things we found in the file that aren't something else, but for Days."""
-    
+
     def __init__(self, text):
+        DayActivity.__init__(self)
         self.text = text
-        
+
     def dump(self, to):
         to.write(self.text + "\n")
-        
+
     @staticmethod
     def responsibility(parent, line):
         """Defacto handler for otherwise unhandled lines who have Day as their parent."""
         if isinstance(parent, Day):
             return 1
         return False
-    
+
     @staticmethod
     def handle_line(parent, line):
         ff = FreeformDayEntry(line)
@@ -315,70 +320,52 @@ class FreeformDayEntry(DayActivity):
         ff.parent = parent
         return parent
 
-@dayactivity
-class PublicDayBullet(DayActivity):
-    """A thing you did today.  Starts with "+ " and contains a single line of text. This is identical to DayBullet
-    except that it's considered to be a "public" entry; something you could post to a timesheet or scrum update.
-    """
-
-    def __init__(self, msg):
-        self.msg = msg
-
-    def dump(self, to):
-        to.write("+ " + self.msg)
-        to.write("\n")
-
-    @staticmethod
-    def responsibility(parent, line):
-        if line.startswith("+ ") and isinstance(parent, Day):
-            return 20
-        elif line == "+" and isinstance(parent, Day):
-            return 50
-
-    @staticmethod
-    def handle_line(parent, line):
-        if line == "+":
-            return parent
-
-        bullet = PublicDayBullet(string.strip(line[1:]))
-        bullet.parent = parent
-        parent.entries.append(bullet)
-        return parent
-
-    def __eq__(self, other):
-        return isinstance(other, PublicDayBullet) and other.msg == self.msg
 
 @dayactivity
 class DayBullet(DayActivity):
     """A thing you did today.  Starts with "- " and contains a single line of text.
     """
-            
+
     def __init__(self, msg):
+        DayActivity.__init__(self)
         self.msg = msg
+        self.public = False
 
     def dump(self, to):
-        to.write("- " + self.msg)
+        if self.public:
+            to.write("+ ")
+        else:
+            to.write("- ")
+
+        to.write(self.msg)
         to.write("\n")
 
     @staticmethod
     def responsibility(parent, line):
-        if line.startswith("- ") and isinstance(parent, Day):
+        if (line.startswith("- ") or line.startswith("+ ")) and isinstance(parent, Day):
             return 20
         elif line == "-" and isinstance(parent, Day):
             return 50
 
     @staticmethod
     def handle_line(parent, line):
-        if line == "-":
+        if line == "-" or line == "+":
             return parent
-        
+
         bullet = DayBullet(string.strip(line[1:]))
         bullet.parent = parent
         parent.entries.append(bullet)
+
+        if line[0] == "+":
+            bullet.public = True
+        else:
+            bullet.public = False
+
         return parent
 
     def __eq__(self, other):
         return isinstance(other, DayBullet) and other.msg == self.msg
+
 
 @dayactivity
 class DayMultiBullet(DayActivity):
@@ -386,8 +373,9 @@ class DayMultiBullet(DayActivity):
     
     Starts with "--" (followed optionally by text) and ends with "--" on a line by itself.
     """
-    
+
     def __init__(self, msg):
+        DayActivity.__init__(self)
         self.msg = msg
 
     def dump(self, to):
@@ -403,37 +391,39 @@ class DayMultiBullet(DayActivity):
     def handle_line(parent, line):
         """If we're already reading a multibullet, then continue until we reach "--" on a blank line.
         Otherwise, create a new DayMultiBullet and push it onto the stack."""
-        
+
         if isinstance(parent, DayMultiBullet):
             if line == "--":
                 parent.msg = string.rstrip(parent.msg, "\r\n \t")
                 return
             parent.msg += "\n" + line
             return parent
-        else:            
+        else:
             last_activity = DayMultiBullet(string.strip(line[2:]))
             last_activity.parent = parent
             parent.entries.append(last_activity)
             return last_activity
-        
+
     def __eq__(self, other):
         return isinstance(other, DayMultiBullet) and other.msg == self.msg
-    
+
+
 @dayactivity
 class DayDone(DayActivity):
     """Mark a TODO as done.  Format is "- done: #NN" where NN is the todo number.
     """
-    
+
     def __init__(self, seq, msg=None):
+        DayActivity.__init__(self)
         self.seq = int(seq)
         self.msg = msg
-    
+
     def dump(self, to):
         to.write("- done: #%d" % self.seq)
         if self.msg:
             to.write(self.msg)
         to.write("\n")
-        
+
     @staticmethod
     def responsibility(parent, line):
         return line.startswith("- done:") and isinstance(parent, Day)
@@ -451,6 +441,7 @@ class DayDone(DayActivity):
     def __eq__(self, other):
         return isinstance(other, DayDone) and self.seq == other.seq and other.msg == self.msg
 
+
 @carryforward
 @dayactivity
 class DayTodo(DayActivity):
@@ -463,32 +454,32 @@ class DayTodo(DayActivity):
     
     Todo entries not completed at the end of the week are carried over to the next week.
     """
-    
+
     highwatermark = 0
-    
+
     def __init__(self, msg, seq=None):
-        if seq != None:
+        DayActivity.__init__(self)
+        if seq is not None:
             self.seq = int(seq)
-            DayTodo.highwatermark = max (DayTodo.highwatermark, self.seq)
+            DayTodo.highwatermark = max(DayTodo.highwatermark, self.seq)
         else:
             self.seq = None
-
         self.msg = msg
-        
+
     def __eq__(self, other):
         return isinstance(other, DayTodo) and self.seq == other.seq and other.msg == self.msg
-    
+
     @staticmethod
     def carryforward(fromweek, toweek):
         carryover = find_todos_in_week(fromweek)
 
         for c in carryover:
             toweek.entries.insert(0, c)
- 
+
     def dump(self, to):
         to.write("- todo")
 
-        if self.seq == None:
+        if self.seq is None:
             DayTodo.highwatermark += 1
             self.seq = DayTodo.highwatermark
 
@@ -522,20 +513,20 @@ class DayTodo(DayActivity):
 # Static helper methods.
 ###
 def find_todos_in_week(week):
-    '''Return all DayTodo instances in a Week.
-    
+    """Return all DayTodo instances in a Week.
+
     Note this method will return both carryover and daily todo entries in the list, in the order they're found in the Week.
-    '''
-    
+    """
+
     todos = []
-    
+
     for entry in week.entries:
-        if (isinstance(entry, DayTodo)): todos.append(entry)
-        
+        if isinstance(entry, DayTodo): todos.append(entry)
+
     for day in week.days():
         for todo in day.todos():
             todos.append(todo)
-            
+
     for day in week.days():
         for done in day.dones():
             for todo in todos:

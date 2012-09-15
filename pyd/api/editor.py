@@ -1,8 +1,8 @@
-'''
+"""
 Created on Apr 24, 2011
 
 @author: idcmp
-'''
+"""
 
 import subprocess
 import os
@@ -11,8 +11,8 @@ DEFAULT_EDITOR = "emacs"
 
 AT_END = {
     # Emacs variants
-    'emacs': ["-nw","+9999"],
-    'nano': [ "+9999"],
+    'emacs': ["-nw", "+9999"],
+    'nano': ["+9999"],
     'xemacs': ["+9999"],
     # vi(m) variants
     'vi': ["+9999"],
@@ -25,8 +25,9 @@ AT_END = {
 def launch(filename):
     editor = resolve_editor()
     position = at_end_options(editor)
-        
+
     subprocess.call([editor] + position + [filename])
+
 
 def resolve_editor():
     editor = os.getenv("PYD_EDITOR")
@@ -36,6 +37,7 @@ def resolve_editor():
             return DEFAULT_EDITOR
         return editor
 
+
 def at_end_options(editor):
     """Returns the appropriate options for positioning the editor at
     the end of the file. This function attempts to parse the random
@@ -44,6 +46,6 @@ def at_end_options(editor):
     """
     # Trim off any trailing command-line arguments
     editor = editor.split()[0]
-    
+
     path, binary = os.path.split(editor)
     return AT_END.get(binary, [])
