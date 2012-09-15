@@ -63,12 +63,12 @@ class Week:
         for entry in self.entries:
             entry.dump(to)
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         return  (parent is None) or  (isinstance(parent, Week) and (line == "" or line is None))
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         if line is None:
             return None
 
@@ -102,8 +102,8 @@ class WeekEntry(object):
     def dump(self, to):
         pass
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         """Return True, False, None or an integer depending on if this class is responsible for
         parsing a given line.  False, None and 0 are identical (not responsible).  True is the same
         as returning an integer of 100.  If multiple classes return integers or true, the one with
@@ -114,8 +114,8 @@ class WeekEntry(object):
         Note that a call with the current parent and a line equaling None is done to indicate EOF."""
         return False
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         """When this handler is elected, this method will be called. Implementors must 1) attach
         newly created entities to the parent correctly, 2) return the appropriate "parent" to push
         onto the stack (or False). Returning the same parent as was passed in keeps the parent the same. Returning
@@ -134,15 +134,15 @@ class FreeformWeekEntry(WeekEntry):
     def dump(self, to):
         to.write(self.text + "\n")
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         """Defacto handler for otherwise unhandled lines who have Week as their parent."""
         if isinstance(parent, Week):
             return 1
         return False
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         ff = FreeformWeekEntry(line)
         parent.entries.append(ff)
         ff.parent = parent
@@ -153,12 +153,12 @@ class FreeformWeekEntry(WeekEntry):
 class CarryForwardIndicator(WeekEntry):
     indicator = "++carriedforward"
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         return line == CarryForwardIndicator.indicator
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         cf = CarryForwardIndicator()
         cfp = parent
 
@@ -225,16 +225,16 @@ class Day(WeekEntry):
         for entry in self.entries:
             entry.dump(to)
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         if line.startswith("** ") and isinstance(parent, Week):
             return True
         elif line == "" and isinstance(parent, Day):
             return True
 
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         if line == "":
             # Pop stack out of Day.
             return None
@@ -283,12 +283,12 @@ class DayActivity:
     def dump(self, to):
         pass
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         return False
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         return parent
 
     def __ne__(self, other):
@@ -306,15 +306,15 @@ class FreeformDayEntry(DayActivity):
     def dump(self, to):
         to.write(self.text + "\n")
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         """Defacto handler for otherwise unhandled lines who have Day as their parent."""
         if isinstance(parent, Day):
             return 1
         return False
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         ff = FreeformDayEntry(line)
         parent.entries.append(ff)
         ff.parent = parent
@@ -340,15 +340,15 @@ class DayBullet(DayActivity):
         to.write(self.msg)
         to.write("\n")
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         if (line.startswith("- ") or line.startswith("+ ")) and isinstance(parent, Day):
             return 20
         elif line == "-" and isinstance(parent, Day):
             return 50
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         if line == "-" or line == "+":
             return parent
 
@@ -382,13 +382,13 @@ class DayMultiBullet(DayActivity):
         to.write("-- " + self.msg)
         to.write("\n--\n")
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         """This class will push itself onto the stack."""
         return (line.startswith("--") and isinstance(parent, Day)) or isinstance(parent, DayMultiBullet)
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         """If we're already reading a multibullet, then continue until we reach "--" on a blank line.
         Otherwise, create a new DayMultiBullet and push it onto the stack."""
 
@@ -424,12 +424,12 @@ class DayDone(DayActivity):
             to.write(self.msg)
         to.write("\n")
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         return line.startswith("- done:") and isinstance(parent, Day)
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         m = re.match(r"- done: #(\d+)(.*)", line)
         if m:
             last_activity = DayDone(m.group(1), m.group(2))
@@ -469,8 +469,8 @@ class DayTodo(DayActivity):
     def __eq__(self, other):
         return isinstance(other, DayTodo) and self.seq == other.seq and other.msg == self.msg
 
-    @staticmethod
-    def carryforward(fromweek, toweek):
+    @classmethod
+    def carryforward(cls, fromweek, toweek):
         carryover = find_todos_in_week(fromweek)
 
         for c in carryover:
@@ -487,12 +487,12 @@ class DayTodo(DayActivity):
         to.write(": " + self.msg)
         to.write("\n")
 
-    @staticmethod
-    def responsibility(parent, line):
+    @classmethod
+    def responsibility(cls, parent, line):
         return line.startswith("- todo") and (isinstance(parent, Day) or isinstance(parent, Week))
 
-    @staticmethod
-    def handle_line(parent, line):
+    @classmethod
+    def handle_line(cls, parent, line):
         m = re.match(r"- todo\(#(.*)\): (.*)", line)
         if m:
             last_activity = DayTodo(m.group(2), m.group(1))
