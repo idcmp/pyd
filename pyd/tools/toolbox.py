@@ -23,7 +23,7 @@ def ensure_current_header_exists(filename):
     week = reader.DiaryReader().read_file(filename)
 
     # if we have more than one for whatever reason, that's fine.
-    if not len(filter(lambda day: day.my_day == date.today(), week.days())):
+    if len(filter(lambda day: day.my_day == date.today(), week.days())) == 0:
         day = model.Day(date.today())
         week.entries.append(day)
 
