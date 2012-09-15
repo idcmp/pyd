@@ -3,7 +3,7 @@ Created on May 1, 2011
 
 @author: idcmp
 '''
-import unittest2 as unittest
+import unittest
 
 
 class Test(unittest.TestCase):
@@ -16,6 +16,10 @@ class Test(unittest.TestCase):
     def test_todos_get_carried_over(self):
         pass
     
-    
+
+    def test_skipped_week_carryover(self):
+        """Test that carryover will still happen even if there is no file for the missing week."""
+        pass
+
 if __name__ == "__main__":
     unittest.main()

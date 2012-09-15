@@ -3,4 +3,7 @@ pyd.egg-info
 distribute-*.egg
 distribute-*.tar.gz
 sample-*.txt
-
+sample-*.txt.bak
+*~
+*.iml
+.idea

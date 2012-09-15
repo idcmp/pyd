@@ -29,10 +29,12 @@ def launch(filename):
     subprocess.call([editor] + position + [filename])
 
 def resolve_editor():
-    editor = os.getenv("EDITOR")
+    editor = os.getenv("PYD_EDITOR")
     if editor is None:
-        return DEFAULT_EDITOR
-    return editor
+        editor = os.getenv("EDITOR")
+        if editor is None:
+            return DEFAULT_EDITOR
+        return editor
 
 def at_end_options(editor):
     """Returns the appropriate options for positioning the editor at

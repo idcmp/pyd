@@ -15,6 +15,9 @@ import re
 from datetime import datetime, date
 from collections import deque
 
+# When seeking backwards for something, stop looking after this many weeks.
+MAXIMUM_HOLIDAY_WEEKS = 8
+
 diary_reader = []
 week_entries = []
 day_activities = []
@@ -190,7 +193,8 @@ class Day(WeekEntry):
     def set_out_at(self, out_at):
         self.out_at = out_at
 
-    def dump(self, to):
+    def dump_header(self, to):
+
         to.write("\n** " + self.my_day.strftime("%a %d-%b"))
         
         # It's perfectly valid to have no "out", in which case a closing paren is
@@ -208,6 +212,10 @@ class Day(WeekEntry):
                 to.write(")")
 
         to.write("\n")
+
+    def dump(self, to):
+
+        dump_header(to)
 
         for entry in self.entries:
                 entry.dump(to)

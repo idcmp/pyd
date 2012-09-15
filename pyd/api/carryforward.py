@@ -12,6 +12,7 @@ from pyd.api import diaryreader as reader
 from pyd.api import diarywriter as writer
 from pyd.api import diarymodel as model
 from pyd.api import naming as naming
+from pyd.api.diarymodel import MAXIMUM_HOLIDAY_WEEKS
 
 def perform_carryforward():
     '''Perform as many carryforwards as needed.
@@ -22,10 +23,13 @@ def perform_carryforward():
     '''
     
     offset = 1
+    nonpersistentweeks = 0
     while True:
         weekname = naming.relative_name(offset)
         week = reader.DiaryReader().read_file(weekname)
-        if week.has_carryforward() or week.persistent == False:
+        if week.persistent == False:
+            nonpersistentweeks += 1
+        if week.has_carryforward() or nonpersistentweeks == MAXIMUM_HOLIDAY_WEEKS:
             break
         offset += 1
     
