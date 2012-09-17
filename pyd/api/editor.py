@@ -35,7 +35,7 @@ def resolve_editor():
         editor = os.getenv("EDITOR")
         if editor is None:
             return DEFAULT_EDITOR
-        return editor
+    return editor
 
 
 def at_end_options(editor):
