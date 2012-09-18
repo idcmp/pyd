@@ -277,6 +277,8 @@ class Day(WeekEntry):
 class DayActivity:
     """Abstract class for activities that occur in a day."""
 
+    public = True
+
     def __init__(self):
         self.msg = None
 
@@ -326,10 +328,10 @@ class DayBullet(DayActivity):
     """A thing you did today.  Starts with "- " and contains a single line of text.
     """
 
-    def __init__(self, msg):
+    def __init__(self, msg, public=False):
         DayActivity.__init__(self)
         self.msg = msg
-        self.public = False
+        self.public = public
 
     def dump(self, to):
         if self.public:
