@@ -277,7 +277,7 @@ class Day(WeekEntry):
 class DayActivity:
     """Abstract class for activities that occur in a day."""
 
-    public = True
+    public = False
 
     def __init__(self):
         self.msg = None
