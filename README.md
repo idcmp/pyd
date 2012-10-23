@@ -5,12 +5,12 @@ script to launch the correct file to edit. It was called d.
 Then, that shell script supported a super simple "todo" tracking system. I
 would enter:
 
- - todo: take out the trash
+    - todo: take out the trash
 
 ..and after exiting the editor, the shell script would give it a unique #
 based on other numbers it could find
 
- - todo(#42): take out the trash
+    - todo(#42): take out the trash
 
 ..then I wrote another shell script that would show me all the todo's in a
 week. I was able to mark a todo done by:
