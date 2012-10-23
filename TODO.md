@@ -1,4 +1,4 @@
-- introduce provisional file locking (ala ~/Diary/ww-yyyy.txt.lck)
+- introduce provisional file locking (ala `~/Diary/ww-yyyy.txt.lck`)
 - introduce something that can append to a day in a lock-smart way
 - use the above 2 things to track git commits in a sane way
 - autotrack din/dout via screensaver
