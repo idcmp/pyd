@@ -34,7 +34,7 @@ So, then comes Python.  It's fast enough and more structured than a shell script
 
 * `$ din` sets the time you came in today as "now".  Will not overwrite if run more than once a day.
 * `$ dout` sets the time you left, *will* overwrite each time it's run
-* `$ d` launches the diary week text file in an editor
+* `$ edit` launches the diary week text file in an editor
 * `$ dtodo` shows all the undone things currently tracked
 * `$ dscrum` shows all the public items you did yesterday
 
