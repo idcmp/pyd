@@ -1,0 +1,24 @@
+#!/usr/bin/python
+"""
+Created on Nov  6, 2012
+
+@author: ojacobson
+"""
+
+import sys
+
+from pyd.api import naming
+from pyd.tools import toolbox
+
+from pyd.api import diaryreader
+from pyd.api import diarywriter
+
+if __name__ == '__main__':
+    current_diary = naming.current_name()
+    week = diaryreader.DiaryReader().read_file(current_diary)
+    try:
+        today = filter(lambda entry: toolbox.is_today(entry), week.days())[0]
+        today.dump(sys.stdout)
+    except IndexError:
+        print >>sys.stderr, "No diary entry for today."
+        sys.exit(1)

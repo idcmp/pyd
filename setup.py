@@ -14,6 +14,7 @@ setup(
         'dout',
         'dtodo',
         'dscrum',
+        'dcat',
         'edit',
     ],
     
