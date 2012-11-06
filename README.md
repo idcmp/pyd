@@ -37,6 +37,7 @@ So, then comes Python.  It's fast enough and more structured than a shell script
 * `$ edit` launches the diary week text file in an editor
 * `$ dtodo` shows all the undone things currently tracked
 * `$ dscrum` shows all the public items you did yesterday
+* `$ dcat` shows your diary entries for today on standard output
 
 First, and foremost, the file this works on is a text file. While it has some
 syntax, it's designed so that you have enough wiggle room to just put whatever
