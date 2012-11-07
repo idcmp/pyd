@@ -6,6 +6,7 @@ Created on Nov  6, 2012
 """
 
 import sys
+import codecs
 
 from pyd.api import naming
 from pyd.tools import toolbox
@@ -17,8 +18,9 @@ if __name__ == '__main__':
     current_diary = naming.current_name()
     week = diaryreader.DiaryReader().read_file(current_diary)
     try:
+        out = codecs.getwriter('utf-8')(sys.stdout)
         today = filter(lambda entry: toolbox.is_today(entry), week.days())[0]
-        today.dump(sys.stdout)
+        today.dump(out)
     except IndexError:
         print >>sys.stderr, "No diary entry for today."
         sys.exit(1)

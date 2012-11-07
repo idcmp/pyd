@@ -13,6 +13,7 @@ NOTE: This is pretty similar to 'dscrum' except:"
 This may change more as time goes on.
 """
 import sys
+import codecs
 
 from pyd.tools import toolbox
 
@@ -25,9 +26,10 @@ if __name__ == '__main__':
 
     public = [entry for entry in yesterday.entries if entry.public]
 
-    print "Subject: IDW - " + yesterday.my_day.strftime("%Y-%m-%d")
+    out = codecs.getwriter('utf-8')(sys.stdout)
+    print >>out, "Subject: IDW - " + yesterday.my_day.strftime("%Y-%m-%d")
 
     for bullet in public:
         bullet.public = False
-        bullet.dump(sys.stdout)
+        bullet.dump(out)
         bullet.public = True

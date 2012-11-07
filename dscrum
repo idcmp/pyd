@@ -8,6 +8,7 @@ could be yesterday, or it could be months ago.
 @author: idcmp
 """
 import sys
+import codecs
 
 from pyd.tools import toolbox
 
@@ -22,5 +23,6 @@ if __name__ == '__main__':
 
     yesterday.dump_header(sys.stdout)
 
+    out = codecs.getwriter('utf-8')(sys.stdout)
     for bullet in public:
-        bullet.dump(sys.stdout)
+        bullet.dump(out)
