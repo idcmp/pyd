@@ -16,7 +16,7 @@ from datetime import datetime, date
 from collections import deque
 
 # When seeking backwards for something, stop looking after this many weeks.
-MAXIMUM_HOLIDAY_WEEKS = 8
+MAXIMUM_HOLIDAY_WEEKS = 13
 
 diary_reader = []
 week_entries = []
