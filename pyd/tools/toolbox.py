@@ -37,7 +37,14 @@ def find_yesterday():
 
 
 def _try_yesterday(days_to_go_back):
-    """Private."""
+    """Private. Get the week for the passed in days_to_go_back. If it's the current week, find the day logged
+    prior to the current day.  If there is a gap (ie, today is Thursday and there's an entry for Tuesday but
+    not Wednesday - then 'yesterday' is Tuesday.
+
+    If it's not the current week, then return the last day for the found week (or None if there are no entries for that
+    week).
+    """
+
     yesterday_diaryname = naming.relative_name(days_ago=days_to_go_back)
 
     week = reader.DiaryReader().read_file(yesterday_diaryname)

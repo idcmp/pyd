@@ -21,9 +21,9 @@ if __name__ == '__main__':
 
     if yesterday is None:
         print "Couldn't find yesterday."
-        exit(0)
+        sys.exit(0)
 
-    public = filter(lambda entry: entry.public, yesterday.entries)
+    public = [entry for entry in yesterday.entries if entry.public]
 
     print "Subject: IDW - " + yesterday.my_day.strftime("%Y-%m-%d")
 
