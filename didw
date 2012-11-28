@@ -1,0 +1,33 @@
+#!/usr/bin/python
+"""
+Created on Nov 28, 2012
+
+In order to meet certain reporting requirements, we're now required to send what we've done
+on a daily basis to a particular email address.  I have a shell script which tends to the emailing
+for now, but uses this tool to print out the relevant data.
+
+NOTE: This is pretty similar to 'dscrum' except:"
+    1) it prints the date out in the required format
+    2) it converts the "+" of PublicDayBullet to a "-"
+
+This may change more as time goes on.
+"""
+import sys
+
+from pyd.tools import toolbox
+
+if __name__ == '__main__':
+    yesterday = toolbox.find_yesterday()
+
+    if yesterday is None:
+        print "Couldn't find yesterday."
+        exit(0)
+
+    public = filter(lambda entry: entry.public, yesterday.entries)
+
+    print "Subject: IDW - " + yesterday.my_day.strftime("%Y-%m-%d")
+
+    for bullet in public:
+        bullet.public = False
+        bullet.dump(sys.stdout)
+        bullet.public = True
