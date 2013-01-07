@@ -2,7 +2,7 @@
 Used to create file names for diary files.
 """
 
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 import os
 
 def current_name():
@@ -11,7 +11,7 @@ def current_name():
 
 
 def relative_name(weeks_ago=0, days_ago=0):
-    now = datetime.now()
+    now = date.today()
     then = now - timedelta(weeks=weeks_ago)
     then = then - timedelta(days=days_ago)
     return generate_filename(then)
@@ -19,7 +19,8 @@ def relative_name(weeks_ago=0, days_ago=0):
 
 def generate_filename(my_date):
     _create_diary_dir()
-    week = my_date.strftime("%U-%Y")
+    iso_year, iso_week, iso_weekday = my_date.isocalendar()
+    week = '%02d-%d' % (iso_week, iso_year)
     return os.path.join(os.environ.get("HOME"), "Diary", week + ".txt")
 
 
