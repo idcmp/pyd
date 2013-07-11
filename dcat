@@ -7,6 +7,7 @@ Created on Nov  6, 2012
 
 import sys
 import codecs
+import argparse as ap
 
 from pyd.api import naming
 from pyd.tools import toolbox
@@ -14,13 +15,27 @@ from pyd.tools import toolbox
 from pyd.api import diaryreader
 from pyd.api import diarywriter
 
+def parse_args():
+	parser = ap.ArgumentParser(
+		description='Dump the current day or week to stdout.'
+	)
+	parser.add_argument(
+		'-w', '--week',
+		action='store_true',
+		help='Dump the entire week, rather than just today.'
+	)
+	return parser.parse_args()
+
 if __name__ == '__main__':
+    args = parse_args()
     current_diary = naming.current_name()
     week = diaryreader.DiaryReader().read_file(current_diary)
+    target = week
+    if not args.week:
+        target = filter(lambda entry: toolbox.is_today(entry), week.days())[0]
     try:
         out = codecs.getwriter('utf-8')(sys.stdout)
-        today = filter(lambda entry: toolbox.is_today(entry), week.days())[0]
-        today.dump(out)
+        target.dump(out)
     except IndexError:
         print >>sys.stderr, "No diary entry for today."
         sys.exit(1)
