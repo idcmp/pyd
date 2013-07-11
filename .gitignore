@@ -7,3 +7,5 @@ sample-*.txt.bak
 *~
 *.iml
 .idea
+/build/
+/dist/
