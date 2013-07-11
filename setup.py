@@ -11,6 +11,7 @@ setup(
     packages=find_packages(),
     scripts=[
         'din',
+        'didw',
         'dout',
         'dtodo',
         'dscrum',
