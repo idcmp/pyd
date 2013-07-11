@@ -6,6 +6,7 @@ Created on Apr 25, 2011
 """
 
 import sys
+import codecs
 
 from pyd.api import naming
 from pyd.tools import toolbox
@@ -15,5 +16,6 @@ if __name__ == '__main__':
 
     todos = toolbox.find_todos_in_file(current_diary)
 
+    out = codecs.getwriter('utf-8')(sys.stdout)
     for todo in todos:
-        todo.dump(sys.stdout)    
+        todo.dump(out)
