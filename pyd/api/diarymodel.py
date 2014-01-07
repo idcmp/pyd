@@ -84,6 +84,14 @@ class Week:
             year = 2012
         elif string.find(line, '2013') > -1:
             year = 2013
+        elif string.find(line, '2014') > -1:
+            year = 2014
+        elif string.find(line, '2015') > -1:
+            year = 2015
+        elif string.find(line, '2016') > -1:
+            year = 2016
+        elif string.find(line, '2017') > -1:
+            year = 2017
         else:
             year = 2011
 
